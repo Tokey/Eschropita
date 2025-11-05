@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 4592f94fce8b855408781b1ab701f50a
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309770
+  packageName: POLY 3D Mars Laboratory Sci-Fi Science Room by Ducogen Art
+  packageVersion: 1.0
+  assetPath: Assets/Ducogen/Mars Laboratory/Shader/Metal Test.shadergraph
+  uploadId: 732471
