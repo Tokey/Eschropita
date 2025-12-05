@@ -481,18 +481,25 @@ public class MartianSequencePuzzle : MonoBehaviour
     {
         Debug.Log("Sequence matched! Martians obey now.");
 
-        // Flash all pads green on success
+        // Flash all pads on success
         StartCoroutine(SuccessAnimation());
 
-        // === APPLY DECISION TO ALL NPCs ===
+        // Approve ALL NPCs that are following the player
+        // They will accept the player's request based on their role:
+        // - Worker will repair/work
+        // - Attacker will destroy
+        // - Wanderer will wander
         if (NPCManager.Instance != null)
         {
             foreach (var npc in NPCManager.Instance.All)
             {
-                if (npc != null && npc.IsAwaitingDecision())
+                if (npc == null) continue;
+                
+                // Force approve any NPC that is following or awaiting decision
+                if (npc.state == NPCState.FollowToDecision || 
+                    npc.state == NPCState.AwaitDecision)
                 {
-                    // Automatically approve task
-                    npc.DecideWork(true);
+                    npc.ForceApproveForWork();
                 }
             }
         }

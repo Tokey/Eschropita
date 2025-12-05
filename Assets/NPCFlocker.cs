@@ -175,6 +175,32 @@ public class NPCFlocker : MonoBehaviour
             EnterDeclineCooldown();
         }
     }
+    
+    /// <summary>
+    /// Force approve the NPC for work without requiring decision zone.
+    /// Called by puzzle success to bypass normal decision flow.
+    /// </summary>
+    public void ForceApproveForWork()
+    {
+        // Only approve if NPC is following the player
+        if (state != NPCState.FollowToDecision && state != NPCState.AwaitDecision)
+        {
+            Debug.Log($"NPC cannot be force approved - current state: {state}");
+            return;
+        }
+        
+        state = NPCState.FollowApproved;
+        _agent.speed = followSpeed;
+        
+        // Resume movement if stopped
+        if (_agent.isStopped)
+        {
+            _agent.isStopped = false;
+        }
+        
+        ApplyColor(NPCManager.Instance ? NPCManager.Instance.taskColor : Color.green);
+        Debug.Log($"NPC force approved for work - Role: {role}");
+    }
 
     public void AssignTask(TaskSite site)
     {
