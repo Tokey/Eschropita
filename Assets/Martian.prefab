@@ -126,6 +126,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 370437909a9a5b24e8848bd2afe3ce4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  role: 0
+  wanderDuration: 15
   roamSpeed: 2
   followSpeed: 3.5
   waypointReachDist: 1
@@ -136,7 +138,7 @@ MonoBehaviour:
   maxSteer: 4
   maxNeighbors: 8
   stopFollowingIfFartherThan: 25
-  minFollowDistance: 1.2
+  minFollowDistance: 2.5
   defaultWorkDuration: 8
   useKinematicOrbit: 1
   faceAlongOrbit: 1

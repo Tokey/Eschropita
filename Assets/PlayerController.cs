@@ -18,6 +18,10 @@ public class PlayerController : MonoBehaviour
     [Header("Decision")]
     [Range(0f, 1f)] public float agreeChance = 0.6f;
 
+    [Header("Puzzle")]
+    public MartianSequencePuzzle puzzle;          // assign in Inspector
+    [SerializeField] private float padInteractRadius = 2f; // how close to a pad to interact
+
     Animator animator;
     CharacterController cc;
     float scaleX;
@@ -26,6 +30,8 @@ public class PlayerController : MonoBehaviour
     // keep one active follower handle (you can expand to many later)
     NPCFlocker currentFollower;
 
+    // expose whether the player currently has a follower (used by mushroom field trigger)
+    public bool HasFollower => currentFollower != null;
 
     private float speedMultiplier = 1f;
     public void SetSpeedMultiplier(float mult) { speedMultiplier = mult; }
@@ -77,29 +83,47 @@ public class PlayerController : MonoBehaviour
     {
         if (!Input.GetKeyDown(interactKey)) return;
 
-        // If we already have a follower, drive the decision / assignment flow
+        // PUZZLE INTERACTION ONLY - No NPC interaction during active puzzle
+        if (puzzle != null && puzzle.IsPuzzleActive())
+        {
+            // Try to interact with a pad
+            if (puzzle.TryPlayerInteract(transform, padInteractRadius))
+            {
+                Debug.Log("Interacted with puzzle pad");
+            }
+            else
+            {
+                Debug.Log("Puzzle active - move closer to a pad to interact");
+            }
+            // Block ALL other interactions during puzzle
+            return;
+        }
+
+        // AFTER PUZZLE IS COMPLETE (or not started yet):
+        
+        // If we have a follower, handle follower interactions
         if (currentFollower)
         {
-            // 1) If we're inside the zone but not parked yet, park to AwaitDecision
+            // If we're inside the decision zone (windmill) but not parked yet, park to AwaitDecision
             if (currentFollower.IsInDecisionZone() && !currentFollower.IsAwaitingDecision())
             {
                 currentFollower.SetAwaitDecision();
-                return; // next E will make the decision
+                Debug.Log("Follower set to await decision at windmill");
+                return;
             }
 
-            // 2) If awaiting a decision, decide now (random) — NEW SIGNATURE: DecideWork(bool)
+            // If awaiting a decision, decide now (random)
             if (currentFollower.IsAwaitingDecision())
             {
                 bool accept = Random.value <= agreeChance;
                 currentFollower.DecideWork(accept);
 
-                // If declined (RED), drop our handle
                 if (!accept) currentFollower = null;
+                Debug.Log($"Decision made: {(accept ? "Accepted" : "Rejected")}");
                 return;
             }
 
-            // 3) If GREEN (FollowApproved), allow assigning a site
-            //    (NPCFlocker.AssignTask(site) does nothing unless state == FollowApproved)
+            // If GREEN (FollowApproved), allow assigning a site
             TaskSite site = TaskManager.Instance
                 ? TaskManager.Instance.FindBestSiteForPlayer(transform, viewCam, siteRayRange, siteLayer)
                 : null;
@@ -107,22 +131,24 @@ public class PlayerController : MonoBehaviour
             if (site)
             {
                 currentFollower.AssignTask(site);
+                Debug.Log("Assigned task site to follower");
                 return;
             }
 
-            // Optional: if you want E to release a green follower back to roam, uncomment:
-            // currentFollower.SwitchToRoam(); currentFollower = null; return;
-
+            // Has follower but no valid action
+            Debug.Log("Follower exists but no valid interaction available");
             return;
         }
 
-        // No follower yet → try to recruit nearest NPC (NEW: TryRecruit)
+        // No follower → try to recruit nearest NPC (only when puzzle not active)
         NPCFlocker npc = FindNearestNPC();
         if (npc != null)
         {
-            // TryRecruit returns false if NPC is cooling down (red) or otherwise not recruitable
             if (npc.TryRecruit(transform))
+            {
                 currentFollower = npc;
+                Debug.Log("Recruited new NPC follower");
+            }
         }
     }
 
@@ -157,6 +183,7 @@ public class PlayerController : MonoBehaviour
                 if (d2 < bestD2) { bestD2 = d2; best = n; }
             }
         }
+
         if (best) Debug.DrawLine(p, best.transform.position, Color.green, 0.5f);
         return best;
     }

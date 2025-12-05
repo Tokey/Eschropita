@@ -47,7 +47,7 @@ public class NPCFlocker : MonoBehaviour
 
     [Header("Follow Rules")]
     public float stopFollowingIfFartherThan = 25f;
-    public float minFollowDistance = 1.2f;
+    public float minFollowDistance = 3.5f;  // Minimum distance to keep from player (prevents collision)
 
     [Header("Work (Timing)")]
     public float defaultWorkDuration = 8f;   // fallback if TaskSite.workDuration <= 0
@@ -256,13 +256,25 @@ public class NPCFlocker : MonoBehaviour
         if (!followTarget) { SwitchToRoam(); return; }
 
         float d = Vector3.Distance(transform.position, followTarget.position);
-        Vector3 goal = followTarget.position;
 
-        if (d < minFollowDistance)
+        // If too close, stop the agent completely
+        if (d <= minFollowDistance)
         {
-            Vector3 dir = (transform.position - followTarget.position).normalized;
-            goal = followTarget.position + dir * minFollowDistance;
+            _agent.isStopped = true;
+            _agent.ResetPath();
+            _agent.velocity = Vector3.zero;
+            return;
         }
+
+        // Resume movement if stopped
+        if (_agent.isStopped)
+        {
+            _agent.isStopped = false;
+        }
+
+        // Calculate goal position - move towards player but stop at minFollowDistance
+        Vector3 dirToPlayer = (followTarget.position - transform.position).normalized;
+        Vector3 goal = followTarget.position - dirToPlayer * minFollowDistance;
 
         if (NavMesh.SamplePosition(goal, out var hit, 2f, NavMesh.AllAreas))
             _agent.SetDestination(hit.position);
@@ -276,13 +288,25 @@ public class NPCFlocker : MonoBehaviour
         if (!followTarget) { SwitchToRoam(); return; }
 
         float d = Vector3.Distance(transform.position, followTarget.position);
-        Vector3 goal = followTarget.position;
 
-        if (d < minFollowDistance)
+        // If too close, stop the agent completely
+        if (d <= minFollowDistance)
         {
-            Vector3 dir = (transform.position - followTarget.position).normalized;
-            goal = followTarget.position + dir * minFollowDistance;
+            _agent.isStopped = true;
+            _agent.ResetPath();
+            _agent.velocity = Vector3.zero;
+            return;
         }
+
+        // Resume movement if stopped
+        if (_agent.isStopped)
+        {
+            _agent.isStopped = false;
+        }
+
+        // Calculate goal position - move towards player but stop at minFollowDistance
+        Vector3 dirToPlayer = (followTarget.position - transform.position).normalized;
+        Vector3 goal = followTarget.position - dirToPlayer * minFollowDistance;
 
         if (NavMesh.SamplePosition(goal, out var hit, 2f, NavMesh.AllAreas))
             _agent.SetDestination(hit.position);
