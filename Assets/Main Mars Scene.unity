@@ -1268,6 +1268,7 @@ GameObject:
   - component: {fileID: 564842264}
   - component: {fileID: 564842263}
   - component: {fileID: 564842262}
+  - component: {fileID: 564842265}
   m_Layer: 0
   m_Name: Tornado
   m_TagString: Untagged
@@ -1302,6 +1303,9 @@ MonoBehaviour:
   playerSlowMultiplier: 0.4
   siteDamagePerSecond: 5
   damageRadiusFactor: 0.5
+  tornadoAudioSource: {fileID: 564842265}
+  tornadoSound: {fileID: 8300000, guid: df81ff13b4e27490a97d74c1f325fe4e, type: 3}
+  maxVolume: 1
   minRespawnDelay: 1
   maxRespawnDelay: 30
 --- !u!135 &564842263
@@ -1341,6 +1345,103 @@ Transform:
   - {fileID: 763215555}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &564842265
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 564842261}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 5
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1001 &601740425
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6672,7 +6773,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   agreeChance: 0.6
-  puzzle: {fileID: 0}
+  puzzle: {fileID: 2032331158}
   padInteractRadius: 2
 --- !u!95 &959743099
 Animator:
@@ -7071,7 +7172,6 @@ GameObject:
   - component: {fileID: 1328898110}
   - component: {fileID: 1328898109}
   - component: {fileID: 1328898108}
-  - component: {fileID: 1328898111}
   m_Layer: 0
   m_Name: Terrain
   m_TagString: Untagged
@@ -7154,18 +7254,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1328898111
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1328898107}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1b96df1234b84f72bbb7cc114a6ccd8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1381925781
 GameObject:
   m_ObjectHideFlags: 0
@@ -8991,8 +9079,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: bdbcb92de25961047b9d26c271453666, type: 3}
   - {fileID: 8300000, guid: 058a964d3943ebc42b690dc080eda04d, type: 3}
   - {fileID: 8300000, guid: ff513910b88b4d140950345e15b79de4, type: 3}
-  wrongClip: {fileID: 0}
-  successClip: {fileID: 0}
+  wrongClip: {fileID: 8300000, guid: 0de27a3b006e84f4c9c983ab6a86fca8, type: 3}
+  successClip: {fileID: 8300000, guid: 0bd0f47b3686be5498bde6182e1e9178, type: 3}
   flashDuration: 0.35
   stepDelay: 0.2
   idleColor: {r: 0.6839622, g: 1, b: 0.95669436, a: 1}

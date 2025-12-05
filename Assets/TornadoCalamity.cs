@@ -29,6 +29,11 @@ public class TornadoCalamity : MonoBehaviour
     [Tooltip("Damage radius scales with size via: radius = scale * damageRadiusFactor")]
     [Min(0.01f)] public float damageRadiusFactor = 0.5f;
 
+    [Header("Audio")]
+    public AudioSource tornadoAudioSource;  // Assign in Inspector or will be created
+    public AudioClip tornadoSound;          // Looping tornado sound
+    [Range(0f, 1f)] public float maxVolume = 1f;
+
     [Header("Respawn")]
     [Min(0f)] public float minRespawnDelay = 15f;
     [Min(0f)] public float maxRespawnDelay = 30f;
@@ -67,6 +72,36 @@ public class TornadoCalamity : MonoBehaviour
             main.scalingMode = ParticleSystemScalingMode.Hierarchy; // transform scale drives visuals
             tornadoEffect.gameObject.SetActive(false);
             tornadoEffect.transform.localScale = Vector3.zero;
+        }
+        
+        // Setup audio source
+        SetupAudioSource();
+    }
+    
+    void SetupAudioSource()
+    {
+        // Create audio source if not assigned
+        if (tornadoAudioSource == null)
+        {
+            tornadoAudioSource = GetComponent<AudioSource>();
+            if (tornadoAudioSource == null)
+            {
+                tornadoAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+        
+        // Configure for looping tornado sound
+        tornadoAudioSource.loop = true;
+        tornadoAudioSource.playOnAwake = false;
+        tornadoAudioSource.spatialBlend = 1f; // 3D sound
+        tornadoAudioSource.minDistance = 5f;
+        tornadoAudioSource.maxDistance = 50f;
+        tornadoAudioSource.rolloffMode = AudioRolloffMode.Linear;
+        tornadoAudioSource.volume = 0f;
+        
+        if (tornadoSound != null)
+        {
+            tornadoAudioSource.clip = tornadoSound;
         }
     }
 
@@ -108,6 +143,9 @@ public class TornadoCalamity : MonoBehaviour
         transform.position = GetClampedAnchor() + RandomOnRing(orbitMinRadius, orbitMaxRadius);
         ApplyScale(0f);
         PickNewWanderTarget(true);
+        
+        // Start playing tornado sound
+        StartTornadoSound();
     }
 
     void Deactivate()
@@ -116,6 +154,9 @@ public class TornadoCalamity : MonoBehaviour
         CleanupPlayerSlow();
         if (tornadoEffect) tornadoEffect.gameObject.SetActive(false);
         ApplyScale(0f);
+        
+        // Stop tornado sound
+        StopTornadoSound();
     }
 
     IEnumerator RunLifecycle()
@@ -217,6 +258,38 @@ public class TornadoCalamity : MonoBehaviour
 
             var shape = tornadoEffect.shape;
             if (shape.enabled) shape.radius = s * damageRadiusFactor;
+        }
+        
+        // Update tornado sound volume based on scale
+        UpdateTornadoVolume(s);
+    }
+    
+    void StartTornadoSound()
+    {
+        if (tornadoAudioSource != null && tornadoSound != null)
+        {
+            tornadoAudioSource.clip = tornadoSound;
+            tornadoAudioSource.volume = 0f;
+            tornadoAudioSource.Play();
+        }
+    }
+    
+    void StopTornadoSound()
+    {
+        if (tornadoAudioSource != null)
+        {
+            tornadoAudioSource.Stop();
+            tornadoAudioSource.volume = 0f;
+        }
+    }
+    
+    void UpdateTornadoVolume(float currentScale)
+    {
+        if (tornadoAudioSource != null && tornadoAudioSource.isPlaying)
+        {
+            // Volume scales from 0 to maxVolume based on current scale relative to maxScale
+            float volumeRatio = Mathf.Clamp01(currentScale / maxScale);
+            tornadoAudioSource.volume = volumeRatio * maxVolume;
         }
     }
 
