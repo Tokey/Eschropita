@@ -97,6 +97,9 @@ public class NPCFlocker : MonoBehaviour
     float _cachedStoppingDistance, _cachedSpeed, _cachedAccel;
 
     float _cooldownEnd;
+    
+    // Role indicator visibility
+    GameObject _roleIndicator;
 
     void OnEnable() => NPCManager.Instance?.Register(this);
     void OnDisable()
@@ -127,6 +130,9 @@ public class NPCFlocker : MonoBehaviour
     void Update()
     {
         _frame++;
+        
+        // Update role indicator visibility based on V key and Daffodil's energy
+        UpdateRoleIndicatorVisibility();
 
         switch (state)
         {
@@ -139,6 +145,25 @@ public class NPCFlocker : MonoBehaviour
             case NPCState.DeclineCooldown: DoDeclineCooldown(); break;
             case NPCState.ReturnToRoam: DoReturnToRoam(); break;
         }
+    }
+    
+    void UpdateRoleIndicatorVisibility()
+    {
+        if (_roleIndicator == null) return;
+        
+        // Find Daffodil (FollowPlayer)
+        FollowPlayer daffodil = FindObjectOfType<FollowPlayer>();
+        
+        // Show indicator ONLY when:
+        // 1. V is held down
+        // 2. Daffodil exists and has energy
+        // 3. Daffodil is not sleeping (regenerating)
+        bool shouldShow = Input.GetKey(KeyCode.V) && 
+                         daffodil != null && 
+                         daffodil.Energy > 0.001f && 
+                         !daffodil.IsSleeping;
+        
+        _roleIndicator.SetActive(shouldShow);
     }
 
     public bool TryRecruit(Transform player)
@@ -713,6 +738,9 @@ public class NPCFlocker : MonoBehaviour
         // === 1. Create a small sphere object ===
         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         sphere.name = "RoleIndicator";
+        
+        // Store reference
+        _roleIndicator = sphere;
 
         // remove collider to avoid interference
         Destroy(sphere.GetComponent<Collider>());
@@ -757,6 +785,9 @@ public class NPCFlocker : MonoBehaviour
 #endif
 
         sphere.GetComponent<Renderer>().material = mat;
+        
+        // === 6. Hide by default - only show when V is held and Daffodil has energy ===
+        sphere.SetActive(false);
     }
 
 }

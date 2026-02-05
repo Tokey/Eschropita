@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7161747771668918593}
   - component: {fileID: 7414705550471379183}
   m_Layer: 3
-  m_Name: Martian
+  m_Name: Mycari
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
