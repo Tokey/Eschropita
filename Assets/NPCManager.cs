@@ -21,11 +21,23 @@ public class NPCManager : MonoBehaviour
     [Min(0)] public int attackerCount = 3;
     [Min(0)] public int wandererCount = 3;
 
-    [Tooltip("If true, spawn Martians automatically on Start.")]
+    [Tooltip("If true, spawn Martians automatically on Start (skipped when a GameFlowManager drives spawning).")]
     public bool autoSpawnOnStart = true;
 
     [Header("Roam Area (BoxCollider)")]
     public BoxCollider roamArea;
+
+    [Tooltip("Grows the roam area at startup without editing the scene. The Mycari flock tightly, " +
+             "and in a small box they end up shoulder to shoulder and impossible to pick apart. " +
+             "1 = leave the box exactly as authored.")]
+    [Min(1f)] public float roamAreaScale = 2.5f;
+
+    [Tooltip("Keeps roam targets at least this far apart from each other, so the flock spreads " +
+             "out instead of converging on one spot.")]
+    [Min(0f)] public float minRoamTargetSpacing = 3f;
+
+    // Roam targets handed out recently, used to keep successive picks apart.
+    readonly List<Vector3> _recentRoamTargets = new List<Vector3>();
 
     [Header("Decision Zone (BoxCollider)")]
     public BoxCollider decisionZone;
@@ -44,6 +56,23 @@ public class NPCManager : MonoBehaviour
     public Color taskColor = new Color(0.1f, 1f, 0.2f);  // Green
     public Color declineColor = new Color(1f, 0.2f, 0.2f);  // Red
 
+    [Header("Command acceptance (0-1)")]
+    [Tooltip("Chance a Fixer accepts a Repair order.")]
+    [Range(0f, 1f)] public float workerRepair = 1f;
+    [Tooltip("Chance a Fixer accepts a Dismantle order.")]
+    [Range(0f, 1f)] public float workerDismantle = 0.25f;
+    [Tooltip("Chance a Breaker accepts a Repair order.")]
+    [Range(0f, 1f)] public float attackerRepair = 0.25f;
+    [Tooltip("Chance a Breaker accepts a Dismantle order.")]
+    [Range(0f, 1f)] public float attackerDismantle = 1f;
+    [Tooltip("Chance a Wanderer accepts a Repair order.")]
+    [Range(0f, 1f)] public float wandererRepair = 0.6f;
+    [Tooltip("Chance a Wanderer accepts a Dismantle order.")]
+    [Range(0f, 1f)] public float wandererDismantle = 0.6f;
+
+    [Tooltip("How far around a requested SpawnAt position we search for NavMesh.")]
+    [Min(0.5f)] public float spawnSampleRadius = 5f;
+
     private readonly List<NPCFlocker> _all = new List<NPCFlocker>();
     public IReadOnlyList<NPCFlocker> All => _all;
 
@@ -55,10 +84,27 @@ public class NPCManager : MonoBehaviour
             return;
         }
         Instance = this;
+        ApplyRoamAreaScale();
+    }
+
+    /// <summary>
+    /// Widens the roam box at runtime. Done here rather than in the scene so the authored value
+    /// stays intact and the spacing can be retuned from the Inspector without scene surgery.
+    /// </summary>
+    void ApplyRoamAreaScale()
+    {
+        if (!roamArea || roamAreaScale <= 1.0001f) return;
+        Vector3 before = roamArea.size;
+        // Only widen the footprint; growing height would let them roam above the terrain.
+        roamArea.size = new Vector3(before.x * roamAreaScale, before.y, before.z * roamAreaScale);
+        Debug.Log($"[NPCManager] Roam area widened {before} -> {roamArea.size} (x{roamAreaScale}).");
     }
 
     void Start()
     {
+        // The scripted flow spawns Mycari itself (MycariArrives / EnsurePopulation at Sandbox).
+        if (GameFlowManager.Instance != null) return;
+
         if (autoSpawnOnStart && martianPrefab != null)
         {
             if (useCustomRoleCounts)
@@ -74,13 +120,25 @@ public class NPCManager : MonoBehaviour
 
     public void Register(NPCFlocker npc)
     {
-        if (!_all.Contains(npc))
+        if (npc != null && !_all.Contains(npc))
             _all.Add(npc);
     }
 
     public void Unregister(NPCFlocker npc)
     {
         _all.Remove(npc);
+    }
+
+    /// <summary>Probability (0-1) that a role accepts a command; see the acceptance table.</summary>
+    public float GetAcceptChance(NPCRole role, TaskCommand cmd)
+    {
+        bool repair = cmd == TaskCommand.Repair;
+        switch (role)
+        {
+            case NPCRole.Worker: return repair ? workerRepair : workerDismantle;
+            case NPCRole.Attacker: return repair ? attackerRepair : attackerDismantle;
+            default: return repair ? wandererRepair : wandererDismantle;
+        }
     }
 
     public Vector3 GetRandomNavPointInside()
@@ -94,7 +152,12 @@ public class NPCManager : MonoBehaviour
         var center = roamArea.bounds.center;
         var ext = roamArea.bounds.extents;
 
-        for (int i = 0; i < 16; i++)
+        // Spread the flock out: prefer a point that is not on top of somewhere we just sent
+        // someone else. Falls back to any valid point rather than failing.
+        Vector3 fallback = center;
+        bool haveFallback = false;
+
+        for (int i = 0; i < 24; i++)
         {
             Vector3 randomOffset = new Vector3(
                 Random.Range(-ext.x, ext.x),
@@ -104,16 +167,45 @@ public class NPCManager : MonoBehaviour
 
             Vector3 randomPoint = center + randomOffset;
 
-            if (NavMesh.SamplePosition(randomPoint, out var hit, 2f, NavMesh.AllAreas))
-                return hit.position;
+            if (!NavMesh.SamplePosition(randomPoint, out var hit, 2f, NavMesh.AllAreas)) continue;
+
+            if (!haveFallback) { fallback = hit.position; haveFallback = true; }
+
+            if (minRoamTargetSpacing > 0f && TooCloseToRecent(hit.position)) continue;
+
+            RememberRoamTarget(hit.position);
+            return hit.position;
         }
 
-        return center; // fallback
+        if (haveFallback) RememberRoamTarget(fallback);
+        return fallback;
+    }
+
+    bool TooCloseToRecent(Vector3 p)
+    {
+        float r2 = minRoamTargetSpacing * minRoamTargetSpacing;
+        for (int i = 0; i < _recentRoamTargets.Count; i++)
+            if ((_recentRoamTargets[i] - p).sqrMagnitude < r2) return true;
+        return false;
+    }
+
+    void RememberRoamTarget(Vector3 p)
+    {
+        _recentRoamTargets.Add(p);
+        // Only the last handful matter; beyond that the area would saturate and every pick
+        // would fall through to the fallback.
+        int keep = Mathf.Max(4, _all.Count);
+        while (_recentRoamTargets.Count > keep) _recentRoamTargets.RemoveAt(0);
     }
 
     public bool IsInsideDecisionZone(Vector3 pos)
     {
         return decisionZone && decisionZone.bounds.Contains(pos);
+    }
+
+    public bool IsInsideRoamArea(Vector3 pos)
+    {
+        return roamArea && roamArea.bounds.Contains(pos);
     }
 
     /// <summary>
@@ -181,6 +273,78 @@ public class NPCManager : MonoBehaviour
             SpawnSingle(NPCRole.Wanderer, ref totalSpawned);
 
         Debug.Log($"Spawned total {totalSpawned} Martians: {workers} workers, {attackers} attackers, {wanderers} wanderers.");
+    }
+
+    /// <summary>
+    /// Spawns the regular population (role counts) only if there are no Martians yet.
+    /// Used by the flow when the sandbox opens.
+    /// </summary>
+    public void EnsurePopulation()
+    {
+        _all.RemoveAll(n => n == null);
+        if (_all.Count > 0) return;
+        SpawnByRoles(workerCount, attackerCount, wandererCount);
+    }
+
+    /// <summary>
+    /// Spawns one Martian of the given role at (or near) a world position, snapped to the NavMesh
+    /// within <see cref="spawnSampleRadius"/>. The NPC is NOT clamped into the roam area, so the
+    /// flow can place it anywhere (e.g. next to the windmill). Returns null if spawning failed.
+    /// </summary>
+    public NPCFlocker SpawnAt(NPCRole role, Vector3 worldPos)
+    {
+        if (martianPrefab == null)
+        {
+            Debug.LogError("No martianPrefab assigned in NPCManager!");
+            return null;
+        }
+
+        Vector3 pos = worldPos;
+        if (NavMesh.SamplePosition(worldPos, out var hit, spawnSampleRadius, NavMesh.AllAreas))
+            pos = hit.position;
+        else
+            Debug.LogWarning($"NPCManager.SpawnAt: no NavMesh within {spawnSampleRadius} m of {worldPos}; spawning at the raw position.");
+
+        GameObject npcObj = Instantiate(martianPrefab, pos, Quaternion.identity, transform);
+
+        var flocker = npcObj.GetComponent<NPCFlocker>();
+        if (flocker == null)
+        {
+            Debug.LogError("NPCManager.SpawnAt: martianPrefab has no NPCFlocker component.");
+            return null;
+        }
+
+        flocker.role = role;
+        flocker.clampSpawnToRoamArea = false;
+        Register(flocker);
+        return flocker;
+    }
+
+    /// <summary>
+    /// Nearest registered Martian to <paramref name="from"/>, optionally restricted to a role and
+    /// an extra predicate. Returns null when nothing matches.
+    /// </summary>
+    public NPCFlocker FindNearest(NPCRole? role, Vector3 from, System.Func<NPCFlocker, bool> filter = null)
+    {
+        NPCFlocker best = null;
+        float bestSqr = float.MaxValue;
+
+        for (int i = 0; i < _all.Count; i++)
+        {
+            var npc = _all[i];
+            if (npc == null) continue;
+            if (role.HasValue && npc.role != role.Value) continue;
+            if (filter != null && !filter(npc)) continue;
+
+            float sqr = (npc.transform.position - from).sqrMagnitude;
+            if (sqr < bestSqr)
+            {
+                bestSqr = sqr;
+                best = npc;
+            }
+        }
+
+        return best;
     }
 
     private void SpawnSingle(NPCRole role, ref int counter)

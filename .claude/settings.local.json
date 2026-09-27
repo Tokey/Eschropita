@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem \"h:\\\\Unity Projects\\\\GitHub Repos\\\\Eschropita\\\\Assets\" -Filter \"Mycari*\")",
+      "Bash(Select Name, FullName)"
+    ]
+  }
+}

@@ -30,12 +30,30 @@ public class IsoFollowCamera : MonoBehaviour
     public float distanceZoomOut = 2f;
     public float distanceLerp = 3f;
 
+    [Header("Scan Zoom")]
+    [Tooltip("Field of view while Daffodil is scanning (perspective), so holding V pulls the view back. " +
+             "The spring settles on exactly this whatever the speed zoom is doing.")]
+    [Range(1f, 179f)] public float scanFov = 80f;
+
+    [Tooltip("Orthographic lenses only: added to the size (x0.35) while scanning.")]
+    public float scanFovBoost = 9f;
+
+    [Tooltip("Spring stiffness for the scan zoom. Higher snaps harder.")]
+    [Min(1f)] public float scanZoomStiffness = 42f;
+
+    [Tooltip("Spring damping. Below 1 overshoots slightly and settles, which is what gives the " +
+             "zoom its tactile feel; 1 is a dead-stop with no overshoot.")]
+    [Range(0.2f, 1.5f)] public float scanZoomDamping = 0.62f;
+
     [Header("Handheld Noise")]
+    [Tooltip("Handheld_normal_mild is the one tuned for this: slow drift, medium sway AND fast " +
+             "jitter. The _extreme preset is 15 degrees of very slow lurch with almost no fast " +
+             "content, so scaling it down to a sane size leaves nothing you can actually see.")]
     public NoiseSettings noiseProfile;     // <-- assign an asset here
-    public float noiseAmpIdle = 0.25f;
-    public float noiseAmpMove = 0.5f;
-    public float noiseFreqIdle = 0.7f;
-    public float noiseFreqMove = 1.2f;
+    public float noiseAmpIdle = 0.9f;
+    public float noiseAmpMove = 1.3f;
+    public float noiseFreqIdle = 1f;
+    public float noiseFreqMove = 1.35f;
 
     [Header("Speed Smoothing")]
     public float speedSmoothing = 0.16f;
@@ -47,6 +65,9 @@ public class IsoFollowCamera : MonoBehaviour
     Vector3 _lastPos;
     float _speedSmoothed;
     bool _warnedNoProfile;
+
+    // Scan zoom spring: current offset and its velocity, integrated each frame.
+    float _scanFov, _scanFovVel, _lastScanFov;
 
     void OnEnable()
     {
@@ -75,6 +96,20 @@ public class IsoFollowCamera : MonoBehaviour
         if (target) _lastPos = target.position;
 
         ApplyStatic();
+    }
+
+    /// <summary>
+    /// Retargets the rig at runtime (used by the story flow to linger on a location).
+    /// Setting <see cref="target"/> alone is not enough because Cinemachine reads its own
+    /// tracking target, which Start() only copies once.
+    /// </summary>
+    public void SetTarget(Transform t)
+    {
+        target = t;
+        if (!_cm) _cm = GetComponent<CinemachineCamera>();
+        if (_cm) _cm.Target.TrackingTarget = t;
+        if (t) _lastPos = t.position;
+        _speedSmoothed = 0f;
     }
 
     void ApplyStatic()
@@ -116,15 +151,40 @@ public class IsoFollowCamera : MonoBehaviour
         _speedSmoothed = Mathf.Lerp(_speedSmoothed, instSpeed, 1f - Mathf.Exp(-6f * dt)); // τ≈0.16s
         float t = Mathf.Clamp01(_speedSmoothed / Mathf.Max(0.01f, speedForMaxZoom));
 
-        // zoom
         var lens = _cm.Lens;
+
+        // Speed zoom, eased. The scan offset is added after it so the spring below is not smoothed
+        // away by the lerp that the speed zoom needs.
+        float speedZoomed = 0f;
+        if (!lens.Orthographic)
+            speedZoomed = Mathf.Lerp(lens.FieldOfView - _lastScanFov, baseFOV + zoomOutAmount * t,
+                                     1f - Mathf.Exp(-zoomLerp * dt));
+
+        // Scan pull-back, integrated as a damped spring rather than an exponential lerp. A lerp
+        // eases in and dies at the target; a spring under-damped a little overshoots and settles,
+        // which is what makes the zoom feel like it has weight instead of sliding. In perspective the
+        // target is whatever offset lands the lens on scanFov, so running while scanning does not
+        // stack the two zooms.
+        var daffodil = FollowPlayer.Instance;
+        bool scanning = daffodil != null && daffodil.IsScanning;
+        float scanTarget = !scanning ? 0f
+                         : lens.Orthographic ? scanFovBoost
+                         : Mathf.Max(0f, scanFov - speedZoomed);
+        float k = scanZoomStiffness;
+        float c = 2f * scanZoomDamping * Mathf.Sqrt(Mathf.Max(k, 0.0001f));
+        _scanFovVel += ((scanTarget - _scanFov) * k - _scanFovVel * c) * dt;
+        _scanFov += _scanFovVel * dt;
+
+        // zoom
         if (lens.Orthographic)
         {
-            lens.OrthographicSize = Mathf.Lerp(lens.OrthographicSize, baseOrthoSize + zoomOutAmount * t, 1f - Mathf.Exp(-zoomLerp * dt));
+            float targetSize = baseOrthoSize + zoomOutAmount * t + _scanFov * 0.35f;
+            lens.OrthographicSize = Mathf.Lerp(lens.OrthographicSize, targetSize, 1f - Mathf.Exp(-zoomLerp * dt));
         }
         else
         {
-            lens.FieldOfView = Mathf.Lerp(lens.FieldOfView, baseFOV + zoomOutAmount * t, 1f - Mathf.Exp(-zoomLerp * dt));
+            lens.FieldOfView = speedZoomed + _scanFov;
+            _lastScanFov = _scanFov;
         }
         _cm.Lens = lens;
 

@@ -146,6 +146,7 @@ Material:
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 1
     - _DstBlend2: 10
+    - _DstBlendAlpha: 0
     - _DstMode: 10
     - _Emission: 4
     - _EnableBlendModePreserveSpecularLighting: 0
@@ -168,6 +169,7 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
     - _SrcMode: 5
     - _StencilRef: 0
     - _StencilRefDepth: 1
@@ -236,7 +238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 9
+  version: 10
 --- !u!114 &6581260054244455877
 MonoBehaviour:
   m_ObjectHideFlags: 11
