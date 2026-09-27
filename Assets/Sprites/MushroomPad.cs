@@ -7,8 +7,8 @@ using UnityEditor;
 
 /// <summary>
 /// One mushroom of the melody puzzle: the painted sprite plus everything that makes poking it feel
-/// physical - springy squash and stretch, a lean toward whoever is close, a halo that hugs the
-/// silhouette, spores, and light on the ground under it.
+/// physical - springy squash and stretch, a hand-drawn wobble, a lean toward whoever is close, a halo
+/// that hugs the silhouette, spores, and light on the ground under it.
 ///
 /// <see cref="MartianSequencePuzzle"/> drives it with cues rather than colours:
 ///  - a mood that persists (<see cref="Mood"/>), i.e. what it looks like at rest right now;
@@ -21,6 +21,10 @@ using UnityEditor;
 /// the stem; a SpriteBillboard child turns to the camera; under that, <see cref="body"/> is the
 /// squash / lean pivot carrying the body, halo and depth-twin sprites. Spores, the ground light,
 /// the contact shadow and the nav obstacle are built at runtime.
+///
+/// The wobble is drawn, not rigged: the stem bends from a planted foot, the cap tilts and the drips
+/// swing, which a rotation cannot do. It plays on top of the springs - when it reacts, when it becomes
+/// the one to press, and now and then on its own - and swaps the body, depth twin and halo together.
 /// </summary>
 [DisallowMultipleComponent]
 public class MushroomPad : MonoBehaviour
@@ -88,6 +92,18 @@ public class MushroomPad : MonoBehaviour
     [Tooltip("Multiplier on the ambient spores drifting off the gills.")]
     [SerializeField, Range(0f, 4f)] float sporeRate = 1f;
 
+    [Header("Wobble")]
+    [Tooltip("Hand-drawn wobble, played from the rest pose (the sprite already on the body) through these " +
+             "and back. Repeat a drawing to hold it. Every frame must share the rest sprite's canvas and pivot.")]
+    [SerializeField] Sprite[] wobbleFrames;
+    [Tooltip("Halo for each wobble frame, so the glow keeps hugging the bent silhouette. A missing entry " +
+             "keeps the resting halo.")]
+    [SerializeField] Sprite[] wobbleGlowFrames;
+    [Tooltip("Drawings per second when it reacts. Unprompted wobbles in the calm moods run a little slower.")]
+    [SerializeField, Min(1f)] float wobbleFps = 12f;
+    [Tooltip("Seconds between unprompted wobbles while dormant. Livelier moods wobble more often.")]
+    [SerializeField] Vector2 idleWobbleInterval = new Vector2(6f, 12f);
+
     // ------------------------------------------------------------------ shader ids
 
     static readonly int HueShiftID     = Shader.PropertyToID("_HueShift");
@@ -108,7 +124,9 @@ public class MushroomPad : MonoBehaviour
     static readonly int RingWidthID    = Shader.PropertyToID("_RingWidth");
 
     // ------------------------------------------------------------------ spots on the painting
-    // Normalised on Mushroom.png: u from the left edge, v up from the bottom edge.
+    // Normalised on Mushroom.png: u from the left edge, v up from the bottom edge. Measured on the rest
+    // pose; the wobble frames share its canvas, so they stay close enough for spores, and Wrong stops
+    // the wobble before it drips.
 
     const float GillU0 = 0.2f, GillU1 = 0.85f, GillV0 = 0.5f, GillV1 = 0.58f;
     const float CapV0 = 0.62f, CapV1 = 0.88f;
@@ -166,6 +184,12 @@ public class MushroomPad : MonoBehaviour
     float _lean, _leanVel, _leanTarget;
     float _shake;
 
+    // Drawn wobble. The clock counts drawings and is negative at rest.
+    Sprite _restSprite, _restGlow;
+    float _wobbleClock = -1f, _wobbleRate;
+    int _wobbleQueued, _wobbleShown = -1;
+    float _nextIdleWobble;
+
     float _phase;
     float _driftAcc;
     MaterialPropertyBlock _mpb;
@@ -221,8 +245,10 @@ public class MushroomPad : MonoBehaviour
         {
             _squashVel += 1.4f;
             Flash(nearGlow, 0.35f);
+            Wobble();
         }
         _mood = mood;
+        _nextIdleWobble = Mathf.Min(_nextIdleWobble, Time.time + IdleWobbleGap());
     }
 
     /// <summary>Sequence playback (the Mycari demo and the replay): glows its note, pops, puffs spores.</summary>
@@ -236,6 +262,7 @@ public class MushroomPad : MonoBehaviour
         _reactTarget = NoteLook(3.2f, 1.3f);
         PuffSpores(12, noteColor, 0.9f, fromCap: false);
         Ring(noteColor, 0.8f);
+        Wobble();
         Play(Envelope(0.05f, hold, 0.4f));
     }
 
@@ -256,6 +283,7 @@ public class MushroomPad : MonoBehaviour
         BurstSpores(36, correctGlow, noteColor, 1f);
         PuffSpores(14, noteColor, 1.2f, fromCap: false);
         Ring(correctGlow, 1f);
+        Wobble(1.15f);
         Play(CorrectRoutine(hold));
     }
 
@@ -264,6 +292,8 @@ public class MushroomPad : MonoBehaviour
     {
         if (!isActiveAndEnabled) return;
 
+        // A shudder and a sag, not a dance - the shake hides the snap back to rest.
+        StopWobble();
         _squash = -0.2f;
         _squashVel = -0.5f;
         _shake = 7f;
@@ -287,6 +317,7 @@ public class MushroomPad : MonoBehaviour
     {
         if (!isActiveAndEnabled) return;
 
+        StopWobble();
         _shake = Mathf.Max(_shake, 2.5f);
         _squashVel -= 0.6f;
         Flash(wrongGlow, 0.5f);
@@ -314,6 +345,7 @@ public class MushroomPad : MonoBehaviour
         _leanVel += Random.value < 0.5f ? -45f : 45f;
         Flash(nearGlow, 0.3f);
         PuffSpores(5, dormantGlow, 0.6f, fromCap: false);
+        Wobble();
     }
 
     /// <summary>Back to calm, dormant, nothing playing. Used by puzzle resets.</summary>
@@ -328,6 +360,7 @@ public class MushroomPad : MonoBehaviour
         _shake = 0f;
         _flickerUntil = 0f;
         _mood = Mood.Dormant;
+        StopWobble();
     }
 
     // ------------------------------------------------------------------ lifecycle
@@ -343,6 +376,10 @@ public class MushroomPad : MonoBehaviour
 
         ApplyLayout();
         AddNavObstacle();
+
+        if (bodyRenderer) _restSprite = bodyRenderer.sprite;
+        if (glowRenderer) _restGlow = glowRenderer.sprite;
+        _nextIdleWobble = Time.time + Random.Range(0.2f, 1f) * idleWobbleInterval.y;
 
         _moodLook = MoodLook(_mood, 0f);
         _react = _reactTarget = _moodLook;
@@ -366,6 +403,7 @@ public class MushroomPad : MonoBehaviour
         _reactWeight = 0f;
         _droop = 0f;
         _hueSpin = 0f;
+        StopWobble();
     }
 
     void Update()
@@ -386,6 +424,7 @@ public class MushroomPad : MonoBehaviour
         _shake *= Mathf.Exp(-dt * 5f);
 
         StepSprings(dt, t);
+        UpdateWobble(dt, t);
         ApplyTransform(t);
         ApplyLook(shown, t);
         UpdateGroundFx(shown, dt);
@@ -473,6 +512,7 @@ public class MushroomPad : MonoBehaviour
 
         BurstSpores(56, correctGlow, noteColor, 1.35f, rainbow: true);
         Ring(correctGlow, 1.3f);
+        Wobble(1.15f, 2);
 
         const float cycle = 1.7f;
         float from = _reactWeight;
@@ -559,6 +599,98 @@ public class MushroomPad : MonoBehaviour
         _flashColor = c;
     }
 
+    // ------------------------------------------------------------------ drawn wobble
+
+    /// <summary>
+    /// Plays the drawn wobble <paramref name="cycles"/> times at <paramref name="speed"/> x wobbleFps.
+    /// Mid-wobble it carries on and goes round again rather than jumping back to the first drawing.
+    /// </summary>
+    void Wobble(float speed = 1f, int cycles = 1)
+    {
+        if (wobbleFrames == null || wobbleFrames.Length == 0 || cycles < 1) return;
+
+        float rate = wobbleFps * speed;
+        if (_wobbleClock < 0f)
+        {
+            _wobbleClock = 0f;
+            _wobbleRate = rate;
+            _wobbleQueued = cycles - 1;
+            return;
+        }
+
+        // Still in its first half, the wobble already on screen reads as the response.
+        _wobbleRate = Mathf.Max(_wobbleRate, rate);
+        bool fresh = _wobbleClock < wobbleFrames.Length * 0.5f;
+        _wobbleQueued = Mathf.Max(_wobbleQueued, fresh ? cycles - 1 : cycles);
+    }
+
+    void StopWobble()
+    {
+        _wobbleClock = -1f;
+        _wobbleQueued = 0;
+        ShowWobbleFrame(-1);
+    }
+
+    void UpdateWobble(float dt, float t)
+    {
+        if (wobbleFrames == null || wobbleFrames.Length == 0) return;
+
+        // Now and then on its own, but never over a reaction.
+        if (_wobbleClock < 0f && _reaction == null && t >= _nextIdleWobble)
+            Wobble(_mood == Mood.Dormant || _mood == Mood.Ready ? 0.75f : 1f);
+
+        if (_wobbleClock >= 0f)
+        {
+            _wobbleClock += dt * _wobbleRate;
+            if (_wobbleClock >= wobbleFrames.Length)
+            {
+                if (_wobbleQueued > 0)
+                {
+                    _wobbleQueued--;
+                    _wobbleClock = Mathf.Repeat(_wobbleClock, wobbleFrames.Length);
+                }
+                else
+                {
+                    _wobbleClock = -1f;
+                    _nextIdleWobble = t + IdleWobbleGap();
+                }
+            }
+        }
+
+        ShowWobbleFrame(_wobbleClock < 0f ? -1 : (int)_wobbleClock);
+    }
+
+    /// <summary>Swaps body, depth twin and halo together; -1 is the rest pose.</summary>
+    void ShowWobbleFrame(int i)
+    {
+        if (i == _wobbleShown) return;
+        _wobbleShown = i;
+
+        Sprite body = i >= 0 && wobbleFrames[i] ? wobbleFrames[i] : _restSprite;
+        if (bodyRenderer) bodyRenderer.sprite = body;
+        // The twin must follow, or it would hide whatever stands behind the old silhouette.
+        if (depthRenderer) depthRenderer.sprite = body;
+
+        if (glowRenderer)
+        {
+            bool haveGlow = i >= 0 && wobbleGlowFrames != null && i < wobbleGlowFrames.Length && wobbleGlowFrames[i];
+            glowRenderer.sprite = haveGlow ? wobbleGlowFrames[i] : _restGlow;
+        }
+    }
+
+    float IdleWobbleGap()
+    {
+        float lively;
+        switch (_mood)
+        {
+            case Mood.Ready:  lively = 0.6f; break;
+            case Mood.Near:   lively = 0.3f; break;
+            case Mood.Solved: lively = 0.2f; break;
+            default:          lively = 1f; break;
+        }
+        return Random.Range(idleWobbleInterval.x, idleWobbleInterval.y) * lively;
+    }
+
     // ------------------------------------------------------------------ motion
 
     void StepSprings(float dt, float t)
@@ -640,6 +772,7 @@ public class MushroomPad : MonoBehaviour
             _leanVel += -lateral * 70f * (0.4f + k);
             _squashVel -= (1f - Mathf.Abs(lateral)) * 1.5f * (0.4f + k);
             PuffSpores(3 + Mathf.RoundToInt(4 * k), dormantGlow, 0.5f, fromCap: true);
+            Wobble();
         }
     }
 

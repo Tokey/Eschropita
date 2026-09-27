@@ -19563,6 +19563,26 @@ MonoBehaviour:
   leanTowardPlayer: 5
   breathe: 0.018
   sporeRate: 1
+  wobbleFrames:
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f38f9397defa4564bb81b96f5671f289, type: 3}
+  - {fileID: 21300000, guid: 4200db936f0a4323aa6f51e2c5b531b6, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: cdcd4bdb938b44b1930285f37ad76a3c, type: 3}
+  - {fileID: 21300000, guid: 1ad6bcef70674aa3a63ace58a1b8f10b, type: 3}
+  wobbleGlowFrames:
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: e9a71666d8d1436eaab565610624635c, type: 3}
+  - {fileID: 21300000, guid: c4bdf3e3d7874ee7bb6115374d953c4b, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: 7be97fb3c5524003a038a51dab4442b2, type: 3}
+  - {fileID: 21300000, guid: 4f6f4c578bf14038967886e46c9d5905, type: 3}
+  wobbleFps: 12
+  idleWobbleInterval: {x: 6, y: 12}
 --- !u!1 &1936435294
 GameObject:
   m_ObjectHideFlags: 0
@@ -19928,6 +19948,26 @@ MonoBehaviour:
   leanTowardPlayer: 5
   breathe: 0.018
   sporeRate: 1
+  wobbleFrames:
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f38f9397defa4564bb81b96f5671f289, type: 3}
+  - {fileID: 21300000, guid: 4200db936f0a4323aa6f51e2c5b531b6, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: cdcd4bdb938b44b1930285f37ad76a3c, type: 3}
+  - {fileID: 21300000, guid: 1ad6bcef70674aa3a63ace58a1b8f10b, type: 3}
+  wobbleGlowFrames:
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: e9a71666d8d1436eaab565610624635c, type: 3}
+  - {fileID: 21300000, guid: c4bdf3e3d7874ee7bb6115374d953c4b, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: 7be97fb3c5524003a038a51dab4442b2, type: 3}
+  - {fileID: 21300000, guid: 4f6f4c578bf14038967886e46c9d5905, type: 3}
+  wobbleFps: 12
+  idleWobbleInterval: {x: 6, y: 12}
 --- !u!1 &1738461523
 GameObject:
   m_ObjectHideFlags: 0
@@ -20293,6 +20333,26 @@ MonoBehaviour:
   leanTowardPlayer: 5
   breathe: 0.018
   sporeRate: 1
+  wobbleFrames:
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f38f9397defa4564bb81b96f5671f289, type: 3}
+  - {fileID: 21300000, guid: 4200db936f0a4323aa6f51e2c5b531b6, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: cdcd4bdb938b44b1930285f37ad76a3c, type: 3}
+  - {fileID: 21300000, guid: 1ad6bcef70674aa3a63ace58a1b8f10b, type: 3}
+  wobbleGlowFrames:
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: e9a71666d8d1436eaab565610624635c, type: 3}
+  - {fileID: 21300000, guid: c4bdf3e3d7874ee7bb6115374d953c4b, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: 7be97fb3c5524003a038a51dab4442b2, type: 3}
+  - {fileID: 21300000, guid: 4f6f4c578bf14038967886e46c9d5905, type: 3}
+  wobbleFps: 12
+  idleWobbleInterval: {x: 6, y: 12}
 --- !u!1 &1074347028
 GameObject:
   m_ObjectHideFlags: 0
@@ -20658,6 +20718,26 @@ MonoBehaviour:
   leanTowardPlayer: 5
   breathe: 0.018
   sporeRate: 1
+  wobbleFrames:
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f28a5205d1394777923ab7dbc4356084, type: 3}
+  - {fileID: 21300000, guid: f38f9397defa4564bb81b96f5671f289, type: 3}
+  - {fileID: 21300000, guid: 4200db936f0a4323aa6f51e2c5b531b6, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: e8183c24340b4ee0be3d258fb3dc7def, type: 3}
+  - {fileID: 21300000, guid: cdcd4bdb938b44b1930285f37ad76a3c, type: 3}
+  - {fileID: 21300000, guid: 1ad6bcef70674aa3a63ace58a1b8f10b, type: 3}
+  wobbleGlowFrames:
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: 264353b00b1a4f27ae095b1d47c94a6a, type: 3}
+  - {fileID: 21300000, guid: e9a71666d8d1436eaab565610624635c, type: 3}
+  - {fileID: 21300000, guid: c4bdf3e3d7874ee7bb6115374d953c4b, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: dbcaf248fc2a43e8a865156753e93afc, type: 3}
+  - {fileID: 21300000, guid: 7be97fb3c5524003a038a51dab4442b2, type: 3}
+  - {fileID: 21300000, guid: 4f6f4c578bf14038967886e46c9d5905, type: 3}
+  wobbleFps: 12
+  idleWobbleInterval: {x: 6, y: 12}
 --- !u!1 &1719614215
 GameObject:
   m_ObjectHideFlags: 0
