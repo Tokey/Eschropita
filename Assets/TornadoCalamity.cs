@@ -38,7 +38,12 @@ public class TornadoCalamity : MonoBehaviour
     [Min(0f)] public float strikeSpawnDistance = 20f;
 
     [Header("Damage/Slow")]
+    [Tooltip("Player speed multiplier at the core of a full-grown funnel (1 = no slow).")]
     [Range(0.05f, 1f)] public float playerSlowMultiplier = 0.4f;
+    [Tooltip("Player speed multiplier at the rim of the trigger. The slow eases from the core value to this one by " +
+             "distance squared, so it holds close to the core value further out and loosens mostly toward the rim. " +
+             "The whole slow fades in as the tornado grows.")]
+    [Range(0.05f, 1f)] public float playerSlowAtEdge = 0.5f;
     [Min(0f)] public float siteDamagePerSecond = 5f;
     [Tooltip("Damage radius scales with size via: radius = scale * damageRadiusFactor")]
     [Min(0.01f)] public float damageRadiusFactor = 0.5f;
@@ -514,7 +519,7 @@ public class TornadoCalamity : MonoBehaviour
             if (pc)
             {
                 _slowedPlayer = pc;
-                pc.SetSpeedMultiplier(playerSlowMultiplier);
+                pc.SetSpeedMultiplier(PlayerSlowAt(pc.transform.position));
             }
         }
 
@@ -522,6 +527,33 @@ public class TornadoCalamity : MonoBehaviour
         var site = other.GetComponentInParent<TaskSite>();
         if (site && site.tornadoCanDamage && _damagedThisStep.Add(site))
             site.ApplyDamage(siteDamagePerSecond * intensity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Speed multiplier for a player standing at worldPos: playerSlowMultiplier at the core, easing to
+    /// playerSlowAtEdge at the rim of the trigger, and faded in by how far the tornado has grown.
+    /// </summary>
+    float PlayerSlowAt(Vector3 worldPos)
+    {
+        // Horizontal distance only: the funnel is a column, so standing higher or lower than the
+        // trigger's centre must not loosen its grip.
+        Vector3 centre = transform.TransformPoint(_col.center);
+        float dx = worldPos.x - centre.x, dz = worldPos.z - centre.z;
+        float d = Mathf.Sqrt(dx * dx + dz * dz);
+
+        // The trigger's current world radius across the ground.
+        Vector3 ls = transform.lossyScale;
+        float r = _col.radius * Mathf.Max(Mathf.Abs(ls.x), Mathf.Abs(ls.z));
+
+        // Squared rather than linear, so the grip holds close to the core value further out and
+        // loosens mostly toward the rim.
+        float k = Mathf.Clamp01(d / Mathf.Max(0.001f, r));
+        float slow = Mathf.Lerp(playerSlowMultiplier, playerSlowAtEdge, k * k);
+
+        // The trigger never shrinks below minDamageRadius, so a funnel that is still forming is already
+        // full width. Weighting by growth keeps a wisp from grabbing as hard as the finished storm.
+        float g = Mathf.Clamp01(_scale / Mathf.Max(0.001f, ScaledMaxScale));
+        return Mathf.Lerp(1f, slow, g);
     }
 
     void OnTriggerExit(Collider other)

@@ -40,6 +40,7 @@ Material:
     - _ChromaKey: 1
     - _InkSoftness: 0.12
     - _InkThreshold: 0.55
+    - _PatternFollow: 0.3
     - _PatternKeepAspect: 1
     - _PatternScale: 0.75
     - _ZWrite: 0

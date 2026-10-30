@@ -6241,7 +6241,8 @@ MonoBehaviour:
   moveSpeed: 5
   retargetEvery: 2.5
   strikeSpawnDistance: 20
-  playerSlowMultiplier: 0.4
+  playerSlowMultiplier: 0.22
+  playerSlowAtEdge: 0.5
   siteDamagePerSecond: 5
   damageRadiusFactor: 0.5
   minDamageRadius: 3.5
@@ -11645,7 +11646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e657303519df96f4e9ac1a7e52556658, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 8
+  moveSpeed: 6.5
   gravity: -9.81
   terminalVelocity: -30
   interactKey: 101
@@ -11732,7 +11733,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 673ebf6d815a5024ca39cb163b9afe66, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2a488a3ca9498f0718382d0430b22076, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -17084,6 +17085,7 @@ GameObject:
   - component: {fileID: 1329091258}
   - component: {fileID: 1329091257}
   - component: {fileID: 1329091256}
+  - component: {fileID: 1329091261}
   m_Layer: 0
   m_Name: Obelisk
   m_TagString: Untagged
@@ -17232,10 +17234,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.2
-  m_Height: 7
+  m_Radius: 2
+  m_Height: 8.6
   m_Direction: 1
-  m_Center: {x: 0, y: 3.5, z: 0}
+  m_Center: {x: 0, y: 4.3, z: 0}
 --- !u!114 &1329091259
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17283,6 +17285,38 @@ Transform:
   - {fileID: 1577339459}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1329091261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329091255}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 860791a5bacd48baa935fc8c081a28bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObeliskVisuals
+  bodySprite: {fileID: 21300000, guid: 37d0d1d847d2457b866665eb14b69615, type: 3}
+  shardsSprite: {fileID: 21300000, guid: efc0a22d6eaa46e6a9b395bd25b63b59, type: 3}
+  glowSprite: {fileID: 21300000, guid: a5534a70419f47039ade85d8157642cc, type: 3}
+  bodyMaterial: {fileID: 2100000, guid: 20995cc1071241cdbcc274d2957f9ce4, type: 2}
+  depthMaterial: {fileID: 2100000, guid: e9f737300aac43a5a6cd8b4bbdb8edf5, type: 2}
+  shieldMaterial: {fileID: 2100000, guid: 66147092e5b74dbca5edab4f506d4b15, type: 2}
+  softGlowMaterial: {fileID: 2100000, guid: f2488018b9184adb9de760611168939c, type: 2}
+  size: 1
+  energyColor: {r: 0.45, g: 0.85, b: 1, a: 1}
+  violetColor: {r: 0.541, g: 0.361, b: 1, a: 1}
+  warningColor: {r: 1, g: 0.25, b: 0.35, a: 1}
+  haloStrength: 1
+  dischargeRate: 1
+  crackleVolume: 0.6
+  voiceSpeaker: OBELISK
+  shieldDiameter: 8.8
+  shieldCentre: 3.55
+  shieldForward: 0.7
+  stumpHeight: 0.29
+  collapseSeconds: 1.3
 --- !u!1 &1381925781
 GameObject:
   m_ObjectHideFlags: 0
@@ -17595,112 +17629,113 @@ MonoBehaviour:
   revealSeconds: 4
   lifeSupportFloorOnRestore: 0.6
   scanTutorialLines:
+  - speaker: Eschropita
+    text: "What do the Mycari want me to do here?"
   - speaker: Daffodil
-    text: Systems up. Barely. Welcome to Mars, Eschropita.
+    text: "Information on the nature of the Mycari is scarce. Documentation from the past, synthesized from data gathered from the surveillance obelisk, suggests\u2014"
+  - speaker: Eschropita
+    text: "I would like you to remove that from your data. I don't want to be invasive. You don't have to answer my inquiry."
   - speaker: Daffodil
-    text: I'm your scanner, your map, and apparently your bitch. Hold V to scan.
+    text: "Noted. Purpose for deletion: \"I don't want to be invasive.\""
+  - speaker: Daffodil
+    text: "I can assist you without that data. I can be your scanner, your map, and your guide to what's out there. Hold V to scan the area."
   scanDoneLines:
   - speaker: Daffodil
-    text: See? Everything that matters lights up. Everything else is dust.
+    text: "The scanner highlights what you can interact with."
   - speaker: Daffodil
-    text: "\u2026Something's coming. Small. Fungal.Maybe martians?"
+    text: "Unknown lifeform detected. Mycari classification is probable."
   mycariArrivedLines:
+  - speaker: Eschropita
+    text: "What do I do?"
   - speaker: Daffodil
-    text: A Mycari. Local. They don't talk, they sing. It wants you to follow it.
+    text: "Sensor data indicate that the frequencies emitted by the mushroom structures are identical to those resonating from the Mycari."
   demoStartLines:
-  - speaker: Daffodil
-    text: Watch the mushrooms. It's showing you a melody. you need to mimic it
+  - speaker: Eschropita
+    text: "I think it is showing me a melody\u2026"
   puzzleStartLines:
   - speaker: Daffodil
-    text: Your turn. Walk up to a mushroom and press E. Mimic the tune. Please dont fail
-      FFS.
+    text: "Your turn. Walk up to a mushroom and press E. Same order. I'll be watching."
+  - speaker: Eschropita
+    text: "How comforting!"
   puzzleFailToasts:
-  - 'Daffodil: Wrong. Again.'
-  - "Daffodil: That was\u2026 creative. Again."
-  - 'Daffodil: Watch the mushrooms. Then press the mushrooms. In that order.'
+  - "Daffodil: Incorrect."
+  - "Daffodil: That sequence was novel."
+  - "Daffodil: Observe, memorize, reproduce. This is a remarkably simple algorithm."
   puzzleSuccessLines:
   - speaker: Daffodil
-    text: Fine. You can hum. Congratulations, you're bilingual in mushroom.
+    text: "Congratulations. You made a noise, and it meant something."
   - speaker: Daffodil
-    text: Look, it's heading for the windmill. I think thats a repairer
+    text: "The Mycari knows where it's going. I recommend following the local expert."
   windmillRepairedLines:
   - speaker: Daffodil
-    text: Windmill's back up. That thing powers our life support, so keep it that
-      way.
+    text: "The windmill, which powers the life support system, is functioning again. Excellent. I prefer my humans alive."
   tornadoIntroLines:
   - speaker: Daffodil
-    text: Pressure drop. Storm cell forming. Dust tornado.
+    text: "Pressure drop. Storm cell forming. Dust tornado."
   - speaker: Daffodil
-    text: Stay out of its path. It'll shred you and anything you care about.
+    text: "Stay out of its path. You are considerably less durable than the windmill."
   tornadoGoneLines:
   - speaker: Daffodil
-    text: It's gone. For now. They come back.
+    text: "It's gone. For now. Statistically, I would not relax yet."
   tornadoStrikeLines:
   - speaker: Daffodil
     text: "It's turning. It's heading for the windmill\u2014"
   windmillStruckLines:
   - speaker: Daffodil
-    text: Power's down. Life support runs on that windmill.
+    text: "Power's down. Life support runs on that windmill."
   - speaker: Daffodil
-    text: Find a Fixer, the green ones, and get it running. Breakers, the red ones,
-      only know how to take things apart.
+    text: "Find a Mycari to repair it. Based on the data I no longer possess, it is possible that some Mycari may dismantle it instead."
   - speaker: Daffodil
-    text: Scan with V to tell them apart. Scanning drains me, so don't hold it for
-      fun.
+    text: "Press V to scan. It drains me, so please try not to scan the scenery recreationally."
   lifeSupportLowLines:
   - speaker: Daffodil
-    text: Life support at a quarter. Just saying.
+    text: "Life support at twenty-five percent. This seems relevant."
   gameOverLines:
   - speaker: Daffodil
-    text: "\u2026and that's zero. Rolling back to the last checkpoint. Do better."
+    text: "\u2026and that's zero. Rolling back to the last checkpoint. An excellent demonstration of what not to do!"
   obeliskFoundLines:
   - speaker: Daffodil
-    text: New reading. A structure, shielded, old. Older than the colony. The Mycari
-      avoid it.
+    text: "New reading: a shielded structure. Whatever is inside is drawing a lot of power."
   - speaker: Daffodil
-    text: The shield is energy. Breakers could take it down. Bring a few.
+    text: "Fortunately, aggressive Mycari should make short work of the shield."
   obeliskShieldBrokenLines:
   - speaker: OBELISK
-    text: "\u2026WE WERE THE WIND. WE WERE THE WIND BEFORE YOU NAMED IT."
+    text: "EVERY BREATH. EVERY MOVEMENT. EVERY CHANGE IN THE AIR."
+  - speaker: OBELISK
+    text: "ALL OF IT CAN BE MEASURED. ALL OF IT CAN BE VALUED."
   - speaker: Daffodil
-    text: Well. That's ominous.
+    text: "Well. That's ominous."
   - speaker: Daffodil
-    text: Those shards hold a charge. Pick them up. We can build a shield around
-      the windmill with them. Press E at the windmill.
+    text: "Those shards hold a charge. Pick them up. We can build a shield around the wind turbine with them. Press E at the windmill."
   obeliskCoreLines:
   - speaker: Daffodil
-    text: "Shield's holding. But the storms are getting worse, and that thing is\u2026
-      singing. Louder every minute."
+    text: "Shield's holding. But the storms are getting worse, and that thing is\u2026 singing. Louder every minute."
   - speaker: Daffodil
-    text: I think it's the source. Bring Breakers. Take it all the way down.
+    text: "I think it's the source. Bring Breakers. Take it all the way down."
   obeliskDestroyedLines:
   - speaker: Daffodil
     text: "It's quiet. The wind's\u2026 normal. There's a hatch under the rubble."
   bunkerLines:
   - speaker: TERMINAL
-    text: 'SURVEY OUTPOST 7. LOG 1: The wind sings at night. The obelisk answers.'
+    text: "SURVEY OUTPOST 7. LOG 1: The wind sings at night. The obelisk answers."
   - speaker: TERMINAL
-    text: 'LOG 2: We built the windmills to drown it out. It grew louder.'
+    text: "LOG 2: We built the windmills to drown it out. It grew louder."
   - speaker: TERMINAL
-    text: 'LOG 3: The Mycari know something. We should have listened.'
+    text: "LOG 3: The Mycari know something. We should have listened."
   - speaker: Daffodil
     text: "\u2026Listen."
   newLocationLines:
   - speaker: Daffodil
-    text: The Mycari are playing something new. Over there. Look.
+    text: "The Mycari are playing something new. Over there. Look."
   finalReportLines:
   - speaker: FIXER
-    text: "\u266A The windmill turns. The dome breathes. We patched what you broke
-      and what the wind broke. \u266A"
+    text: "\u266A The windmill turns. The dome breathes. We patched what you broke and what the wind broke. \u266A"
   - speaker: BREAKER
-    text: "\u266A The stone that sang is silent. Its shards keep your wind. We are
-      not sorry. \u266A"
+    text: "\u266A The stone that sang is silent. Its shards keep your wind. We are not sorry. \u266A"
   - speaker: WANDERER
-    text: "\u266A We walked far. The valley past the ridge is green. Follow, when
-      you're ready. \u266A"
+    text: "\u266A We walked far. The valley past the ridge is green. Follow, when you're ready. \u266A"
   - speaker: Daffodil
-    text: That's the report. Green valley, silent stone, running windmill. Not bad
-      for a first week, Eschropita.
+    text: "That's the report. Green valley, silent stone, running windmill. Not bad for a first week, Eschropita."
 --- !u!4 &1492435402
 Transform:
   m_ObjectHideFlags: 0
@@ -18600,7 +18635,7 @@ MonoBehaviour:
   baseFOV: 60
   baseOrthoSize: 7.5
   zoomOutAmount: 10
-  speedForMaxZoom: 8
+  speedForMaxZoom: 6.5
   zoomLerp: 2
   easeDistanceOnMove: 1
   distanceZoomOut: 5

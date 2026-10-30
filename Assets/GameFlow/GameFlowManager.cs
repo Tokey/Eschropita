@@ -66,6 +66,11 @@ public class GameFlowManager : MonoBehaviour
     [SerializeField] float obeliskCoreTornadoIntensity = 1.6f;
     [Tooltip("Tornado intensity after the obelisk is destroyed.")]
     [SerializeField] float calmTornadoIntensity = 0.75f;
+    [Tooltip("Pause after the obelisk's shield shatters before it speaks, so the break reads first.")]
+    [SerializeField] float shieldBreakBeatSeconds = 0.8f;
+    [Tooltip("Pause after the obelisk falls before Daffodil speaks, so the collapse and the dying hum " +
+             "land before the dialogue box covers them.")]
+    [SerializeField] float obeliskCollapseSeconds = 2.5f;
     [Tooltip("How long the camera lingers on the new location after the bunker.")]
     [SerializeField] float revealSeconds = 4f;
     [Tooltip("Life support is topped up to at least this (0-1) when returning to a checkpoint.")]
@@ -74,50 +79,55 @@ public class GameFlowManager : MonoBehaviour
     [Header("Dialogue (edit freely)")]
     [SerializeField] DialogueLine[] scanTutorialLines =
     {
-        L("Daffodil", "Systems up. Barely. Welcome to Mars, Eschropita."),
-        L("Daffodil", "I'm your scanner, your map, and apparently your babysitter. Hold V and I'll show you what's out there."),
+        L("Eschropita", "What do the Mycari want me to do here?"),
+        L("Daffodil", "Information on the nature of the Mycari is scarce. Documentation from the past, synthesized from data gathered from the surveillance obelisk, suggests—"),
+        L("Eschropita", "I would like you to remove that from your data. I don't want to be invasive. You don't have to answer my inquiry."),
+        L("Daffodil", "Noted. Purpose for deletion: \"I don't want to be invasive.\""),
+        L("Daffodil", "I can assist you without that data. I can be your scanner, your map, and your guide to what's out there. Hold V to scan the area."),
     };
     [SerializeField] DialogueLine[] scanDoneLines =
     {
-        L("Daffodil", "See? Everything that matters lights up. Everything else is dust."),
-        L("Daffodil", "…Something's coming. Small. Fungal. Don't panic."),
+        L("Daffodil", "The scanner highlights what you can interact with."),
+        L("Daffodil", "Unknown lifeform detected. Mycari classification is probable."),
     };
     [SerializeField] DialogueLine[] mycariArrivedLines =
     {
-        L("Daffodil", "A Mycari. Local. They don't talk, they sing. It wants you to follow it."),
+        L("Eschropita", "What do I do?"),
+        L("Daffodil", "Sensor data indicate that the frequencies emitted by the mushroom structures are identical to those resonating from the Mycari."),
     };
     [SerializeField] DialogueLine[] demoStartLines =
     {
-        L("Daffodil", "Watch the mushrooms. It's showing you a melody."),
+        L("Eschropita", "I think it is showing me a melody…"),
     };
     [SerializeField] DialogueLine[] puzzleStartLines =
     {
-        L("Daffodil", "Your turn. Walk up to a mushroom and press E. Same order. Try not to embarrass us."),
+        L("Daffodil", "Your turn. Walk up to a mushroom and press E. Same order. I'll be watching."),
+        L("Eschropita", "How comforting!"),
     };
     [Tooltip("Shown as a toast (not a dialogue) so the replay isn't hidden. Rotates through the list.")]
     [SerializeField] string[] puzzleFailToasts =
     {
-        "Daffodil: Wrong. Again.",
-        "Daffodil: That was… creative. Again.",
-        "Daffodil: Watch the mushrooms. Then press the mushrooms. In that order.",
+        "Daffodil: Incorrect.",
+        "Daffodil: That sequence was novel.",
+        "Daffodil: Observe, memorize, reproduce. This is a remarkably simple algorithm.",
     };
     [SerializeField] DialogueLine[] puzzleSuccessLines =
     {
-        L("Daffodil", "Fine. You can hum. Congratulations, you're bilingual in mushroom."),
-        L("Daffodil", "Look, it's heading for the windmill. I think you just got yourself a mechanic."),
+        L("Daffodil", "Congratulations. You made a noise, and it meant something."),
+        L("Daffodil", "The Mycari knows where it's going. I recommend following the local expert."),
     };
     [SerializeField] DialogueLine[] windmillRepairedLines =
     {
-        L("Daffodil", "Windmill's back up. That thing powers our life support, so keep it that way."),
+        L("Daffodil", "The windmill, which powers the life support system, is functioning again. Excellent. I prefer my humans alive."),
     };
     [SerializeField] DialogueLine[] tornadoIntroLines =
     {
         L("Daffodil", "Pressure drop. Storm cell forming. Dust tornado."),
-        L("Daffodil", "Stay out of its path. It'll shred you and anything you care about."),
+        L("Daffodil", "Stay out of its path. You are considerably less durable than the windmill."),
     };
     [SerializeField] DialogueLine[] tornadoGoneLines =
     {
-        L("Daffodil", "It's gone. For now. They come back."),
+        L("Daffodil", "It's gone. For now. Statistically, I would not relax yet."),
     };
     [SerializeField] DialogueLine[] tornadoStrikeLines =
     {
@@ -126,27 +136,28 @@ public class GameFlowManager : MonoBehaviour
     [SerializeField] DialogueLine[] windmillStruckLines =
     {
         L("Daffodil", "Power's down. Life support runs on that windmill."),
-        L("Daffodil", "Find a Fixer, the green ones, and get it running. Breakers, the red ones, only know how to take things apart."),
-        L("Daffodil", "Scan with V to tell them apart. Scanning drains me, so don't hold it for fun."),
+        L("Daffodil", "Find a Mycari to repair it. Based on the data I no longer possess, it is possible that some Mycari may dismantle it instead."),
+        L("Daffodil", "Press V to scan. It drains me, so please try not to scan the scenery recreationally."),
     };
     [SerializeField] DialogueLine[] lifeSupportLowLines =
     {
-        L("Daffodil", "Life support at a quarter. Just saying."),
+        L("Daffodil", "Life support at twenty-five percent. This seems relevant."),
     };
     [SerializeField] DialogueLine[] gameOverLines =
     {
-        L("Daffodil", "…and that's zero. Rolling back to the last checkpoint. Do better."),
+        L("Daffodil", "…and that's zero. Rolling back to the last checkpoint. An excellent demonstration of what not to do!"),
     };
     [SerializeField] DialogueLine[] obeliskFoundLines =
     {
-        L("Daffodil", "New reading. A structure, shielded, old. Older than the colony. The Mycari avoid it."),
-        L("Daffodil", "The shield is energy. Breakers could take it down. Bring a few."),
+        L("Daffodil", "New reading: a shielded structure. Whatever is inside is drawing a lot of power."),
+        L("Daffodil", "Fortunately, aggressive Mycari should make short work of the shield."),
     };
     [SerializeField] DialogueLine[] obeliskShieldBrokenLines =
     {
-        L("OBELISK", "…WE WERE THE WIND. WE WERE THE WIND BEFORE YOU NAMED IT."),
+        L("OBELISK", "EVERY BREATH. EVERY MOVEMENT. EVERY CHANGE IN THE AIR."),
+        L("OBELISK", "ALL OF IT CAN BE MEASURED. ALL OF IT CAN BE VALUED."),
         L("Daffodil", "Well. That's ominous."),
-        L("Daffodil", "Those shards hold a charge. Pick them up. We can build a shield around the windmill with them. Press E at the windmill."),
+        L("Daffodil", "Those shards hold a charge. Pick them up. We can build a shield around the wind turbine with them. Press E at the windmill."),
     };
     [SerializeField] DialogueLine[] obeliskCoreLines =
     {
@@ -738,6 +749,7 @@ public class GameFlowManager : MonoBehaviour
             Objective("Bring Breakers to the Obelisk and break its shield");
             _shieldBroken = false;
             yield return new WaitUntil(() => _shieldBroken || obelisk.Stage != ObeliskStage.Shielded);
+            if (shieldBreakBeatSeconds > 0f) yield return new WaitForSeconds(shieldBreakBeatSeconds);
             yield return Say(obeliskShieldBrokenLines);
             if (checkpoints) checkpoints.Save("Obelisk exposed");
         }
@@ -773,9 +785,11 @@ public class GameFlowManager : MonoBehaviour
         if (!obelisk) yield break;
         Objective("Destroy the Obelisk core");
         _obeliskDestroyed = obelisk.Stage == ObeliskStage.Destroyed;
+        bool fallsNow = !_obeliskDestroyed;   // false when a checkpoint restored it already fallen
         yield return new WaitUntil(() => _obeliskDestroyed || obelisk.Stage == ObeliskStage.Destroyed);
 
         if (tornado) tornado.SetIntensity(calmTornadoIntensity);
+        if (fallsNow && obeliskCollapseSeconds > 0f) yield return new WaitForSeconds(obeliskCollapseSeconds);
         yield return Say(obeliskDestroyedLines);
         if (checkpoints) checkpoints.Save("Obelisk destroyed");
     }
@@ -836,6 +850,9 @@ public class GameFlowManager : MonoBehaviour
 
         yield return Say(finalReportLines);
 
+        var reportCard = Eschropita.Overhaul.OverhaulHooks.FinalReport;
+        if (reportCard != null) yield return reportCard();
+
         foreach (var n in reporters) if (n) n.ScriptedRelease();
     }
 
@@ -870,7 +887,7 @@ public class GameFlowManager : MonoBehaviour
         yield return Say(gameOverLines);
 
         bool confirmed = false;
-        if (hud) hud.ShowGameOver("The windmill stopped and the air ran out.", () => confirmed = true);
+        if (hud) hud.ShowGameOver("The windmill is no longer generating power. Neither are you.", () => confirmed = true);
         else confirmed = true;
         yield return new WaitUntil(() => confirmed);
 
@@ -974,6 +991,8 @@ public class GameFlowManager : MonoBehaviour
 
     void PlayBunkerMusic()
     {
+        var hook = Eschropita.Overhaul.OverhaulHooks.PlayBunkerSong;
+        if (hook != null && hook()) return;
         if (!_music) return;
         _music.clip = bunkerMusic ? bunkerMusic : ProceduralMelody();
         if (_music.clip) _music.Play();

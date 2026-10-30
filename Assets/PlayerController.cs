@@ -11,6 +11,19 @@ public class PlayerController : MonoBehaviour
              "lets gravity build until a single Move step is long enough to tunnel through the floor.")]
     [SerializeField] private float terminalVelocity = -30f;
 
+    [Header("Slowdown")]
+    [Tooltip("How quickly a slow such as the tornado's takes hold, in seconds (exponential: about two thirds of " +
+             "the way there after this long). Short, so getting caught by the storm grabs at once.")]
+    [SerializeField] private float slowEaseSeconds = 0.12f;
+
+    [Tooltip("How quickly she recovers once a slow lets go, in seconds (same easing). Longer than the way in, " +
+             "so walking out of the storm takes a moment to shake off.")]
+    [SerializeField] private float recoverEaseSeconds = 0.6f;
+
+    [Tooltip("How much a slow also slows the run cycle. 0 keeps the stride at full rate, 1 slows it as much as " +
+             "her ground speed (slow motion). In between she struggles: the legs keep pumping, but cover less ground.")]
+    [SerializeField, Range(0f, 1f)] private float stormStrideSlowdown = 0.6f;
+
     [Header("Interaction")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private KeyCode dismissKey = KeyCode.Q;
@@ -68,8 +81,11 @@ public class PlayerController : MonoBehaviour
     string _lastPrompt, _lastHints;
     GameHUD _lastHud;
 
+    // Slows ask for a target; the multiplier actually applied eases toward it every frame (see
+    // EaseSpeedMultiplier), so a slow grabs and lets go instead of snapping.
     private float speedMultiplier = 1f;
-    public void SetSpeedMultiplier(float mult) { speedMultiplier = mult; }
+    private float targetSpeedMultiplier = 1f;
+    public void SetSpeedMultiplier(float mult) { targetSpeedMultiplier = mult; }
 
     public void AddShards(int amount)
     {
@@ -114,6 +130,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // Eased with or without controls, so a slow that ends during a cutscene has worn off by
+        // the time she can move again.
+        EaseSpeedMultiplier();
+
         // Videos, scripted beats and dialogue take the controls away, but gravity has to keep
         // running or the player floats off whatever they were standing on.
         var flow = GameFlowManager.Instance;
@@ -121,7 +141,11 @@ public class PlayerController : MonoBehaviour
         if ((flow != null && !flow.PlayerControlEnabled) || dialogueOpen)
         {
             ApplyGravityOnly();
-            if (animator) animator.SetFloat("Speed", 0f);
+            if (animator)
+            {
+                animator.SetFloat("Speed", 0f);
+                animator.speed = 1f;    // a cutscene must never inherit a storm-slowed stride
+            }
             _commandSite = null;
             PushPrompt("", "");
             return;
@@ -165,6 +189,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Moves the applied speed multiplier toward the last one asked for: quickly on the way down,
+    /// gently on the way back up. Exponential, so it behaves the same at any frame rate.
+    /// </summary>
+    void EaseSpeedMultiplier()
+    {
+        float seconds = targetSpeedMultiplier < speedMultiplier ? slowEaseSeconds : recoverEaseSeconds;
+        speedMultiplier = seconds > 0f
+            ? Mathf.Lerp(speedMultiplier, targetSpeedMultiplier, 1f - Mathf.Exp(-Time.deltaTime / seconds))
+            : targetSpeedMultiplier;
+        // The exponential never quite arrives; land exactly once it is imperceptibly close.
+        if (Mathf.Abs(speedMultiplier - targetSpeedMultiplier) < 1e-3f) speedMultiplier = targetSpeedMultiplier;
+    }
+
     void HandleMove()
     {
         Vector3 input = new Vector3(
@@ -184,7 +222,16 @@ public class PlayerController : MonoBehaviour
         Vector3 move = horizontalMove + Vector3.up * velocity.y;
         cc.Move(move * Time.deltaTime);
 
-        if (animator) animator.SetFloat("Speed", input.sqrMagnitude);
+        if (animator)
+        {
+            animator.SetFloat("Speed", input.sqrMagnitude);
+
+            // While running, a slow slows the run cycle too, but by less than her ground speed, so
+            // she visibly struggles instead of going slow-motion. Idle always plays at full rate.
+            // (> 0.1 is the same test the controller uses to switch Idle -> Run.)
+            bool running = input.sqrMagnitude > 0.1f;
+            animator.speed = running ? Mathf.Lerp(1f, speedMultiplier, stormStrideSlowdown) : 1f;
+        }
 
         if (input.x != 0f)
         {
@@ -286,6 +333,9 @@ public class PlayerController : MonoBehaviour
         {
             if (puzzle.TryPlayerInteract(transform, padInteractRadius)) return;
         }
+
+        // 1b) Overhaul interactables (lore logs, terminals) in reach.
+        if (Eschropita.Overhaul.OverhaulInteract.TryConsume(transform.position)) return;
 
         // 2) Follower + a site in range -> open the order menu, but only once the melody is
         //    learned. Before that it follows you around without understanding a word.

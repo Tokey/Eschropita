@@ -11,6 +11,9 @@ public class DialogueSystem : MonoBehaviour
     /// <summary>Fired whenever a sequence finishes, is stopped or is interrupted by another one.</summary>
     public event System.Action OnDialogueEnded;
 
+    /// <summary>Fired as each line starts typing, so a speaker in the world can react to its own lines.</summary>
+    public event System.Action<DialogueLine> OnLineStarted;
+
     [Header("UI (Canvas)")]
     [SerializeField] private GameObject dialoguePanel;   // panel root
     [SerializeField] private TMP_Text dialogueText;      // main text
@@ -404,6 +407,7 @@ public class DialogueSystem : MonoBehaviour
         }
 
         _typingRoutine = StartCoroutine(TypeLine(line.text));
+        OnLineStarted?.Invoke(line);
     }
 
     IEnumerator TypeLine(string fullText)

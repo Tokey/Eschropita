@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ObeliskBody
+  m_Shader: {fileID: 4800000, guid: 09d818bf8a0b4b1aa59ae4b3302cdb72, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 2800000, guid: a160cb34839a4d979e93f87acc0f3b72, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0.002
+    - _Brightness: 1
+    - _ColorMask: 15
+    - _CoreFlow: 0.3
+    - _CorePhase: 0
+    - _CrackAmount: 0
+    - _CrackGlow: 0.35
+    - _CrackScale: 6
+    - _CrumbleEdgeGlow: 0
+    - _CrumbleHeight: 1.2
+    - _CrumbleJag: 0.06
+    - _DepthOnly: 0
+    - _FlashAmount: 0
+    - _FxTime: 0
+    - _Glitch: 0
+    - _HoleGlow: 0.3
+    - _InkThreshold: 0.14
+    - _Saturation: 1
+    - _ShardGlow: 0.25
+    - _TintAmount: 0
+    - _ZWrite: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _CrackColor: {r: 0.6, g: 0.3, b: 1, a: 1}
+    - _CrumbleEdgeColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+    - _EnergyColor: {r: 0.45, g: 0.85, b: 1, a: 1}
+    - _FlashColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HoleColor: {r: 0.54, g: 0.36, b: 1, a: 1}
+    - _TintColor: {r: 1, g: 0.25, b: 0.35, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

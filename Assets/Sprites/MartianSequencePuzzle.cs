@@ -487,6 +487,7 @@ public class MartianSequencePuzzle : MonoBehaviour
         if (inputIndex < 0 || inputIndex >= sequence.Count) return;
 
         bool isCorrect = (sequence[inputIndex] == id);
+        Eschropita.Overhaul.GameSignals.RaisePadPressed(id, PadPosition(id), isCorrect);
 
         if (isCorrect)
         {
@@ -625,7 +626,11 @@ public class MartianSequencePuzzle : MonoBehaviour
     {
         var m = MushroomAt(id);
         if (m != null) m.Sing(flashDuration);
+        Eschropita.Overhaul.GameSignals.RaisePadSang(id, PadPosition(id));
     }
+
+    private Vector3 PadPosition(int id) =>
+        pads != null && id >= 0 && id < pads.Length && pads[id] != null ? pads[id].transform.position : transform.position;
 
     private void CueCorrect(int id)
     {

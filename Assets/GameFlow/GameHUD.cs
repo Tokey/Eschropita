@@ -260,6 +260,7 @@ public class GameHUD : MonoBehaviour
     /// <summary>Top-center message that fades out after <paramref name="seconds"/> (unscaled).</summary>
     public void Toast(string text, float seconds = 2.5f)
     {
+        Eschropita.Overhaul.GameSignals.RaiseToastShown(text);
         if (!_built || string.IsNullOrEmpty(text)) return;
         _toastText.text = text;
         _toastUntil = Time.unscaledTime + Mathf.Max(0.1f, seconds);
@@ -657,7 +658,7 @@ public class GameHUD : MonoBehaviour
 
         // Life support — only when the system exists in this scene.
         var life = LifeSupport.Instance;
-        _lifeBar.SetVisible(life != null);
+        _lifeBar.SetVisible(life != null && !Eschropita.Overhaul.OverhaulHooks.HideHudLifeBar);
         if (life != null) _lifeBar.SetTarget(Mathf.Clamp01(life.Value01));
 
         // Windmill (+ shield when it can have one).

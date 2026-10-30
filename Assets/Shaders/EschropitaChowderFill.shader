@@ -1,5 +1,6 @@
 // Chowder-style fill: the character's silhouette acts as a window onto a texture
 // that is nailed to WORLD space, so walking drags the art across the pattern.
+// _PatternFollow can let the pattern ride part of the way along, to slow that slide.
 //
 // Screen-space UVs (the usual way to do this) do not work in this project: the
 // Cinemachine rig in IsoFollowCamera.cs follows the player, so the player barely
@@ -40,6 +41,11 @@ Shader "Eschropita/Chowder Fill"
         // swirl was tuned against. On keeps the texture's own width:height, so a
         // motif like the navy ogee is not squashed; the scale sets tile width.
         [ToggleUI] _PatternKeepAspect ("Keep Texture Aspect", Float) = 0
+        // Share of the sprite's own movement the pattern rides along with. 0 = nailed to the
+        // world (the original Chowder look), 1 = painted on, so it never slides. In between it
+        // slides at (1 - follow) times walking speed: a slower churn with the same tile size,
+        // which turning _PatternScale up would not give.
+        _PatternFollow ("Pattern Follow", Range(0,1)) = 0
 
         // Keep punctuation out of [Header(...)]. ShaderLab only accepts
         // identifier characters and spaces, and a stray dash here is a parse
@@ -117,6 +123,7 @@ Shader "Eschropita/Chowder Fill"
             float  _PatternScale;
             float4 _PatternOffset;
             float  _PatternKeepAspect;
+            float  _PatternFollow;
             fixed4 _FillTint;
             float  _FillGlow;
             float  _FillGlowSaturation;
@@ -145,6 +152,9 @@ Shader "Eschropita/Chowder Fill"
                 fixed4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
                 float3 worldPos : TEXCOORD1;
+                // Empty unless instanced. EschFrag reads unity_ObjectToWorld, and in an
+                // instanced draw that is a per-instance lookup keyed on this id.
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -153,6 +163,7 @@ Shader "Eschropita/Chowder Fill"
                 v2f_esch OUT;
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_OUTPUT(v2f_esch, OUT);
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 float4 pos  = UnityFlipSprite(IN.vertex.xyz, _Flip.xy);
@@ -169,6 +180,7 @@ Shader "Eschropita/Chowder Fill"
 
             fixed4 EschFrag(v2f_esch IN) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(IN);
                 fixed4 tex = SampleSpriteTexture(IN.texcoord);
                 clip(tex.a - _AlphaClip);
 
@@ -179,11 +191,17 @@ Shader "Eschropita/Chowder Fill"
                 float3 camRight = float3(cy, 0.0, -sy);
                 float3 camUp    = float3(sy * sp, cp, cy * sp);
 
+                // _PatternFollow drags the projection along with the object's own origin, so
+                // moving by d slides the pattern by d * (1 - follow). The origin comes from the
+                // same matrix the vertex stage used to build worldPos, so the two always agree.
+                float3 anchor  = unity_ObjectToWorld._m03_m13_m23;
+                float3 pattPos = IN.worldPos - anchor * _PatternFollow;
+
                 // Both axes respond to ground movement in every direction, so
                 // walking "into" the screen slides the pattern too - using
                 // worldPos.y for V instead would freeze it on that axis.
-                float2 puv = float2(dot(IN.worldPos, camRight),
-                                    dot(IN.worldPos, camUp))
+                float2 puv = float2(dot(pattPos, camRight),
+                                    dot(pattPos, camUp))
                              / max(_PatternScale, 1e-4);
                 // TexelSize.z * .y is width / height.
                 puv.y *= lerp(1.0, _PatternTex_TexelSize.z * _PatternTex_TexelSize.y,

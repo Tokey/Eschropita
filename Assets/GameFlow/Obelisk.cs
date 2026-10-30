@@ -13,9 +13,13 @@ public enum ObeliskStage
 }
 
 /// <summary>
-/// The alien obelisk: a dummy structure built entirely from primitives at runtime.
-/// The attached TaskSite is the single source of truth for shield/health; this component
-/// only listens to it, derives a stage, and drives visuals, sound, shards and the bunker.
+/// The alien obelisk. The attached TaskSite is the single source of truth for shield/health; this
+/// component only listens to it, derives a stage, and drives visuals, sound, shards and the bunker.
+///
+/// With an <see cref="ObeliskVisuals"/> holding the painted art on the same object, that component
+/// draws it and this one only reports what happened (stage changes, hits, the hum). Without one -
+/// e.g. the dummy GameFlowManager creates in a scene that has no obelisk - it falls back to a
+/// structure built from primitives.
 /// </summary>
 [RequireComponent(typeof(TaskSite))]
 [DisallowMultipleComponent]
@@ -76,12 +80,14 @@ public class Obelisk : MonoBehaviour
     public event Action<ObeliskStage> OnStageChanged;
 
     TaskSite _site;
+    ObeliskVisuals _visuals;     // painted art; null when the primitive dummy is in use
     ObeliskStage _stage = ObeliskStage.Shielded;
     BunkerTrigger _bunkerTrigger;
     Material _coreMat;
     Material _shieldMat;
     Color _coreEmissive;
     float _lastHealth;
+    float _lastShield;
     float _shake;            // 0..1, spikes on damage and decays
     float _targetVolume;
     bool _humming;
@@ -93,6 +99,9 @@ public class Obelisk : MonoBehaviour
     void Awake()
     {
         _site = GetComponent<TaskSite>();
+        _visuals = GetComponent<ObeliskVisuals>();
+        if (_visuals != null && !_visuals.HasArt) _visuals = null;
+
         ConfigureSite();
         EnsureCollider();
         BuildVisuals();
@@ -100,6 +109,7 @@ public class Obelisk : MonoBehaviour
 
         _stage = DeriveStage();
         _lastHealth = _site.health;
+        _lastShield = _site.shield;
     }
 
     void OnEnable()
@@ -125,7 +135,9 @@ public class Obelisk : MonoBehaviour
         // All Awakes have run (TaskSite included), so the site values are final here.
         _stage = DeriveStage();
         _lastHealth = _site.health;
+        _lastShield = _site.shield;
         ApplyStageState();
+        if (_visuals != null) _visuals.Snap(_stage);
         if (humOnStart) StartHum();
     }
 
@@ -135,8 +147,17 @@ public class Obelisk : MonoBehaviour
         EvaluateStage();
 
         float dt = Time.deltaTime;
-        if (_site.health < _lastHealth - 0.01f) _shake = 1f;
+        float lostShield = _lastShield - _site.shield;
+        float lostHealth = _lastHealth - _site.health;
+        if (lostHealth > 0.01f) _shake = 1f;
+        if (_visuals != null)
+        {
+            if (lostShield > 0.001f) _visuals.ShieldHit(lostShield);
+            if (lostHealth > 0.001f) _visuals.CoreHit(lostHealth);
+            _visuals.SetHum(humSource && _humming ? humSource.volume / 0.7f : 0f);
+        }
         _lastHealth = _site.health;
+        _lastShield = _site.shield;
         _shake = Mathf.Max(0f, _shake - dt * 3f);
 
         AnimateCore();
@@ -171,11 +192,48 @@ public class Obelisk : MonoBehaviour
     void EnsureCollider()
     {
         // Daffodil's scan and the Mycari work radius both need a physics presence on the root.
-        if (GetComponent<Collider>() != null) return;
-        var cap = gameObject.AddComponent<CapsuleCollider>();
-        cap.radius = 1.2f;
-        cap.height = 7f;
-        cap.center = new Vector3(0f, 3.5f, 0f);
+        if (GetComponent<Collider>() == null)
+        {
+            var cap = gameObject.AddComponent<CapsuleCollider>();
+            cap.radius = 1.2f;
+            cap.height = 7f;
+            cap.center = new Vector3(0f, 3.5f, 0f);
+        }
+        if (_visuals == null) return;
+
+        // The painted statue is far wider at the plinth than the old dummy. Carving the NavMesh
+        // makes the Mycari path round it rather than through the painting; added at runtime like
+        // the mushrooms' obstacles, since carving only exists while playing.
+        if (!TryGetComponent(out NavMeshObstacle obstacle)) obstacle = gameObject.AddComponent<NavMeshObstacle>();
+        obstacle.shape = NavMeshObstacleShape.Capsule;
+        obstacle.carving = true;
+        obstacle.carveOnlyStationary = true;
+        FitFootprint(false);
+    }
+
+    /// <summary>
+    /// Sizes the solid capsule and the nav obstacle to the painted statue (or to its stump), so the
+    /// player cannot walk into the plinth. Only used with the painted art.
+    /// </summary>
+    void FitFootprint(bool destroyed)
+    {
+        if (_visuals == null) return;
+        float radius = _visuals.FootprintRadius;
+        float height = Mathf.Max(destroyed ? _visuals.StumpWorldHeight : _visuals.StatueHeight, radius * 2f);
+
+        if (TryGetComponent(out CapsuleCollider cap))
+        {
+            cap.direction = 1;
+            cap.radius = radius;
+            cap.height = height;
+            cap.center = new Vector3(0f, height * 0.5f, 0f);
+        }
+        if (TryGetComponent(out NavMeshObstacle obstacle))
+        {
+            obstacle.radius = radius;
+            obstacle.height = height;
+            obstacle.center = new Vector3(0f, height * 0.5f, 0f);
+        }
     }
 
     // ------------------------------------------------------------------ stage logic
@@ -202,6 +260,7 @@ public class Obelisk : MonoBehaviour
             // Site was healed/reset from outside; just resync silently.
             _stage = derived;
             ApplyStageState();
+            if (_visuals != null) _visuals.Snap(_stage);
             OnStageChanged?.Invoke(_stage);
             return;
         }
@@ -216,6 +275,7 @@ public class Obelisk : MonoBehaviour
     void EnterStage(ObeliskStage stage)
     {
         ApplyStageState();
+        if (_visuals != null) _visuals.PlayStage(stage);
         switch (stage)
         {
             case ObeliskStage.Exposed:
@@ -247,6 +307,7 @@ public class Obelisk : MonoBehaviour
             core.localPosition = destroyed ? StumpOffset : CoreOffset;
         }
         if (bunker && bunker.activeSelf != destroyed) bunker.SetActive(destroyed);
+        FitFootprint(destroyed);
 
         switch (_stage)
         {
@@ -299,9 +360,11 @@ public class Obelisk : MonoBehaviour
         ObeliskShard.DestroyAll();
         _stage = stage;
         _lastHealth = _site.health;
+        _lastShield = _site.shield;
         _shake = 0f;
         if (_bunkerTrigger) _bunkerTrigger.ResetEntered();
         ApplyStageState();
+        if (_visuals != null) _visuals.Snap(stage);
         if (humSource && _humming && stage != ObeliskStage.Destroyed && !humSource.isPlaying) humSource.Play();
         OnStageChanged?.Invoke(_stage);
     }
@@ -358,6 +421,17 @@ public class Obelisk : MonoBehaviour
 
     void BuildVisuals()
     {
+        if (_visuals == null) BuildPrimitives();
+
+        if (bunker == null) bunker = BuildBunker();
+        _bunkerTrigger = bunker.GetComponentInChildren<BunkerTrigger>(true);
+        if (_bunkerTrigger == null) _bunkerTrigger = bunker.AddComponent<BunkerTrigger>();
+        bunker.SetActive(false);
+    }
+
+    /// <summary>The stand-in look when no painted art is assigned: a glowing cube in a translucent sphere.</summary>
+    void BuildPrimitives()
+    {
         if (core == null)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -395,20 +469,19 @@ public class Obelisk : MonoBehaviour
             shieldRenderer.material = _shieldMat;
             shieldRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
-
-        if (bunker == null) bunker = BuildBunker();
-        _bunkerTrigger = bunker.GetComponentInChildren<BunkerTrigger>(true);
-        if (_bunkerTrigger == null) _bunkerTrigger = bunker.AddComponent<BunkerTrigger>();
-        bunker.SetActive(false);
     }
 
     GameObject BuildBunker()
     {
         // Sits just in front of the obelisk so the player can actually walk into the trigger
-        // (the root capsule collider keeps them out of the centre).
+        // (the root capsule collider keeps them out of the centre). "In front" is the camera's side:
+        // behind the painted plinth the hatch would be hidden by the stump.
         var root = new GameObject("Bunker");
         root.transform.SetParent(transform, false);
-        root.transform.localPosition = new Vector3(0f, 0f, 2.6f);
+        var rig = FindAnyObjectByType<IsoFollowCamera>();
+        Vector3 towardCamera = Quaternion.Euler(0f, rig ? rig.yaw : 0f, 0f) * Vector3.back;
+        float clearance = (_visuals != null ? _visuals.FootprintRadius : 1.2f) + 1.4f;
+        root.transform.position = transform.position + towardCamera * clearance;
 
         var baseBox = GameObject.CreatePrimitive(PrimitiveType.Cube);
         baseBox.name = "Base";

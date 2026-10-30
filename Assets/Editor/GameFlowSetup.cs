@@ -31,6 +31,7 @@ public static class GameFlowSetup
     const string ObeliskName   = "Obelisk";
     const string ViewpointName = "NewLocationViewpoint";
     const string PlayerTag     = "Player";
+    const string ObeliskArtDir = "Assets/Sprites/Obelisk";
 
     // The legacy canvas is recognised by these children. The UIManager script
     // that drove them has been deleted, so its type cannot serve as the marker.
@@ -448,14 +449,16 @@ public static class GameFlowSetup
             s.workRadius      = 4.5f;
         });
 
-        // Tall capsule so scans and Mycari path-finding treat the whole pillar as the site.
+        // Tall capsule so scans and Mycari path-finding treat the whole pillar as the site. Sized to
+        // the painted statue (wide plinth, 7 m drawing stretched by 1/cos 35); the Obelisk refits it
+        // to the art at runtime either way.
         var collider = Ensure<CapsuleCollider>(go, report);
         Modify(collider, c =>
         {
             c.direction = 1; // Y axis
-            c.radius    = 1.2f;
-            c.height    = 7f;
-            c.center    = new Vector3(0f, 3.5f, 0f);
+            c.radius    = 2f;
+            c.height    = 8.6f;
+            c.center    = new Vector3(0f, 4.3f, 0f);
         });
 
         // The Obelisk drives volume itself; this just makes it a looping 3D source.
@@ -469,7 +472,47 @@ public static class GameFlowSetup
             a.maxDistance  = 60f;
         });
 
-        return existing != null ? existing : Ensure<Obelisk>(go, report);
+        var obelisk = existing != null ? existing : Ensure<Obelisk>(go, report);
+        EnsureObeliskArt(go, report);
+        return obelisk;
+    }
+
+    /// <summary>
+    /// Adds ObeliskVisuals and fills any empty art slot from the assets under Sprites/Obelisk (the
+    /// halo, sparks and ground light reuse the mushrooms' Soft Glow material). Slots that already
+    /// hold something are left alone, so hand-picked art survives a re-run.
+    /// </summary>
+    static void EnsureObeliskArt(GameObject go, Report report)
+    {
+        var visuals = Ensure<ObeliskVisuals>(go, report);
+        var so = new SerializedObject(visuals);
+        int filled = 0;
+        filled += FillSlot<Sprite>(so, "bodySprite", ObeliskArtDir + "/Obelisk.png", report);
+        filled += FillSlot<Sprite>(so, "shardsSprite", ObeliskArtDir + "/ObeliskShards.png", report);
+        filled += FillSlot<Sprite>(so, "glowSprite", ObeliskArtDir + "/ObeliskGlow.png", report);
+        filled += FillSlot<Material>(so, "bodyMaterial", ObeliskArtDir + "/ObeliskBody.mat", report);
+        filled += FillSlot<Material>(so, "depthMaterial", ObeliskArtDir + "/ObeliskDepth.mat", report);
+        filled += FillSlot<Material>(so, "shieldMaterial", ObeliskArtDir + "/ObeliskShield.mat", report);
+        filled += FillSlot<Material>(so, "softGlowMaterial", "Assets/Sprites/Mushroom/MushroomGlow.mat", report);
+        if (filled == 0) return;
+
+        so.ApplyModifiedProperties();
+        report.Note($"assigned {filled} obelisk art slot(s)");
+    }
+
+    static int FillSlot<T>(SerializedObject so, string field, string path, Report report) where T : Object
+    {
+        var prop = so.FindProperty(field);
+        if (prop == null || prop.objectReferenceValue != null) return 0;
+
+        var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+        if (asset == null)
+        {
+            report.Warn($"Obelisk art '{path}' not found; ObeliskVisuals.{field} left empty.");
+            return 0;
+        }
+        prop.objectReferenceValue = asset;
+        return 1;
     }
 
     /// <summary>
