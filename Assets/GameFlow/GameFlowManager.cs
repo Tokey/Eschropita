@@ -229,6 +229,7 @@ public class GameFlowManager : MonoBehaviour
     bool _obeliskDestroyed;
     bool _handlingGameOver;
     bool _lowWarned;
+    bool _windmillUnderHalf;
 
     Coroutine _flow;
     NPCFlocker _tutorialMycari;
@@ -390,6 +391,7 @@ public class GameFlowManager : MonoBehaviour
         {
             windmill.OnDepleted += OnWindmillDepleted;
             windmill.OnFullyRepaired += OnWindmillRepaired;
+            windmill.OnHealthChanged += OnWindmillHealthChanged;
         }
         if (checkpoints) checkpoints.OnSaved += OnCheckpointSaved;
     }
@@ -421,6 +423,7 @@ public class GameFlowManager : MonoBehaviour
         {
             windmill.OnDepleted -= OnWindmillDepleted;
             windmill.OnFullyRepaired -= OnWindmillRepaired;
+            windmill.OnHealthChanged -= OnWindmillHealthChanged;
         }
         if (checkpoints) checkpoints.OnSaved -= OnCheckpointSaved;
     }
@@ -443,6 +446,23 @@ public class GameFlowManager : MonoBehaviour
     void OnWindmillDepleted(TaskSite s)
     {
         if (SandboxUnlocked) Toast("Windmill down. Life support is draining");
+    }
+
+    /// <summary>Life support turns on the windmill's half-power mark, so say when it is crossed (with a little hysteresis).</summary>
+    void OnWindmillHealthChanged(TaskSite s)
+    {
+        if (!SandboxUnlocked || _handlingGameOver || s == null) return;
+        float h = s.Health01;
+        if (!_windmillUnderHalf && h < 0.5f)
+        {
+            _windmillUnderHalf = true;
+            if (h > 0f) Toast($"Windmill at {h * 100f:0}%: below half power, life support is draining", 3f);
+        }
+        else if (_windmillUnderHalf && h >= 0.55f)
+        {
+            _windmillUnderHalf = false;
+            Toast("Windmill back above half power: life support recovering");
+        }
     }
 
     void OnWindmillRepaired(TaskSite s)
@@ -744,6 +764,7 @@ public class GameFlowManager : MonoBehaviour
         if (lifeSupport && lifeSupport.Value01 < lifeSupportFloorOnRestore) lifeSupport.Set(lifeSupport.max * lifeSupportFloorOnRestore);
         if (checkpoints) checkpoints.Save("Sandbox");
 
+        _windmillUnderHalf = windmill && windmill.Health01 < 0.5f;
         Objective("Keep the windmill running: ask a Fixer (E), sing with it at the grove, order a repair");
         _sandboxStartTime = Time.time;
         _obeliskScanned = false;
