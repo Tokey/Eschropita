@@ -18,8 +18,9 @@ namespace Eschropita.Overhaul
 
         public static Material CreateMaterial(Color color, float widthPx = 2.2f, float maxWorldWidth = 0.12f)
         {
-            var sh = Shader.Find(ShaderName);
-            if (sh == null) return null;
+            var sh = Resources.Load<Shader>("Overhaul/Shaders/EschropitaOutline");
+            if (sh == null) sh = Shader.Find(ShaderName);
+            if (sh == null || !sh.isSupported) return null;
             var m = new Material(sh) { name = "Outline" };
             m.SetColor("_OutlineColor", color);
             m.SetFloat("_OutlineWidth", widthPx);
