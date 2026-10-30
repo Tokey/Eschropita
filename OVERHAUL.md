@@ -52,12 +52,20 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 - **Winning Mycari over** (game code: `Assets/GameFlow/MycariPersuasion.cs`) — in the sandbox, asking a Mycari (E)
   sends it to the mushroom grove. Meet it there and it sings its melody on the mushrooms. Sing it back and it listens:
   it follows you and takes any order. A wrong note and it turns red, wanders home, and won't hear you out for 20 s.
-  A Mycari you've won over remembers your song (the tutorial Fixer too): ask again and it follows at once. One song
-  at a time. Melodies start at 4 notes (Breakers 5), grow every two Mycari won (up to +2), and drop a note after a
-  miss.
-- **Balance** (`GameBalance`, runtime only) — with the windmill at a quarter health, life support lasts about two
-  minutes: about 70 s to the 25 % alarm, then an emergency reserve halves the drain. That's time for a song, a miss
-  and a retry. Recovery is quick once the windmill turns again. Tornadoes do 2.5 health per second.
+  **One song buys one job**: once a Mycari has been sent to work it needs a new song next time. If it lost you before
+  getting an order, it still remembers. (`rememberSong` makes it remember for good.) One song at a time. Melodies are
+  4 notes (Breakers 5), plus one after every two Mycari won (capped at +1, since you only get one go), and minus one
+  after a miss.
+- **Balance** — tuned with an event simulation of the sandbox and obelisk phases, using the real speeds, distances,
+  melody timings and rates.
+  - Life support with the windmill at a quarter health lasts about two minutes (drain 2.0/s, halved below 25 %).
+    Regen is 3.5/s.
+  - Tornadoes do 2.5/s, and one pass never takes more than 35 % of a site (`TornadoCalamity.maxPassDamage01`).
+  - Breakers sent to the obelisk stay until their layer is down (`Obelisk.breakersFinishTheLayer`): one trip for
+    the shield, one for the core. Before, each 8 s visit did about 40 damage, so it took about nine round trips.
+  - Result: about 6 minutes from the sandbox to the fallen obelisk, with 4–5 songs on top of the tutorial. Life
+    support runs out in about 0.5 % of runs for a sure player, 1.5 % for an average one and 5 % for one who misses a
+    lot; checkpoints catch those.
 - **Tornado fixes** (game code: `TornadoCalamity`) — the funnel now follows the ground. Its anchor sat at y = 0,
   about 8 m under the terrain, so random tornadoes were invisible and never hit anything. Random tornadoes now also
   go for the windmill 40 % of the time (more while the obelisk sings): they bear down on it and weave over it for
@@ -65,7 +73,9 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 - **Mycari pathing** — the JoyTech dome stood on top of the Mycari's roam area, and its walls cut their NavMesh,
   trapping them. Structures and props now keep clear of the roam area and the walks between landmarks. The dome
   moved behind the home, outside it. Idle Mycari also stay out of the mushroom grove (`NPCManager.groveKeepOut`), so
-  they no longer stand on the singing mushrooms; the widened roam box reached into it.
+  they no longer stand on the singing mushrooms; the widened roam box reached into it. The Mycari prefab's roam speed
+  is 0, which left any Mycari that was dismissed, refusing, released by the story or lost by you frozen on the spot.
+  They now walk home at follow speed first, then stand or roam there.
 - **Level** — Mars wind turbine (spins with windmill health, fungal repair patches, shard-shield plates), visible
   life-support plant with conduits to the dome door, organic glowing grove floor, JoyTech biodome + airlock door,
   Escropita's lander, ruins, surveillance masts, bunker hatch, horizon landmarks. Textures: CC0 Poly Haven

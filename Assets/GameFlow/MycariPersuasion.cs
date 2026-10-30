@@ -9,7 +9,8 @@ using UnityEngine.AI;
 ///  2. Meet it there: it sings you its melody, walking the mushrooms.
 ///  3. Sing it back. Right: it listens, follows you and takes any order. A wrong note: it loses interest, turns
 ///     red and wanders home, and won't hear you out again for a little while.
-/// A Mycari you have won over remembers your song: ask it again later and it follows straight away.
+/// One song buys one job: a Mycari that lost track of you before you gave it an order still remembers and follows
+/// again when asked, but once it has been sent to work it needs a new song next time.
 /// One song at a time. Melodies grow with each Mycari won over (Breakers are harder to impress) and ease off
 /// by a note after a miss. The scripted tutorial (before the sandbox) is untouched.
 /// </summary>
@@ -24,7 +25,9 @@ public class MycariPersuasion : MonoBehaviour
     [Min(0)] public int breakerExtra = 1;
     [Tooltip("One more note after this many Mycari won over, up to maxExtra.")]
     [Min(1)] public int winsPerStep = 2;
-    [Min(0)] public int maxExtra = 2;
+    [Tooltip("At most this many extra notes from progress: Fixers top out at 5, Breakers at 6 (one go, so longer " +
+             "melodies turned into coin flips).")]
+    [Min(0)] public int maxExtra = 1;
 
     [Header("Timing")]
     [Tooltip("How long the Mycari waits at the grove for you before wandering home.")]
@@ -35,8 +38,8 @@ public class MycariPersuasion : MonoBehaviour
     [Min(5f)] public float abandonDistance = 16f;
 
     [Header("Memory")]
-    [Tooltip("A Mycari won over once follows straight away when asked again.")]
-    public bool rememberSong = true;
+    [Tooltip("Off (default): a song buys one job. On: a Mycari won over once follows straight away for the rest of the game.")]
+    public bool rememberSong = false;
 
     /// <summary>True in the sandbox (after the tutorial), when the grove and its mushrooms are there.</summary>
     public bool Active
@@ -55,10 +58,8 @@ public class MycariPersuasion : MonoBehaviour
     public bool Busy => _candidate != null;
     public NPCFlocker Candidate => _candidate;
 
-    public bool Remembers(NPCFlocker n) => rememberSong && n != null && _won.Contains(n);
-
-    /// <summary>Counts <paramref name="n"/> as won over (the tutorial's Mycari heard your first song).</summary>
-    public void Remember(NPCFlocker n) { if (n != null) _won.Add(n); }
+    /// <summary>True when <paramref name="n"/> heard your song and hasn't been given its job yet (or always, with rememberSong).</summary>
+    public bool Remembers(NPCFlocker n) => n != null && _won.Contains(n);
 
     readonly HashSet<NPCFlocker> _won = new HashSet<NPCFlocker>();
     readonly Dictionary<NPCFlocker, float> _refuseUntil = new Dictionary<NPCFlocker, float>();
@@ -111,8 +112,19 @@ public class MycariPersuasion : MonoBehaviour
     void OnSongSolved() { if (Busy) _solved = true; }
     void OnSongMissed() { if (Busy) _missed = true; }
 
+    readonly List<NPCFlocker> _spent = new List<NPCFlocker>();
+
     void Update()
     {
+        // One song, one job: once it has been sent to work it needs a new song (unless rememberSong).
+        if (!rememberSong && _won.Count > 0)
+        {
+            _spent.Clear();
+            foreach (var n in _won)
+                if (n == null || n.state == NPCState.FollowToTask || n.state == NPCState.Work) _spent.Add(n);
+            foreach (var n in _spent) _won.Remove(n);
+        }
+
         if (!_hinted && Active)
         {
             _hinted = true;

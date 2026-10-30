@@ -691,7 +691,6 @@ public class GameFlowManager : MonoBehaviour
     IEnumerator PhaseMycariRepairs()
     {
         MycariObey = true;
-        if (_tutorialMycari && MycariPersuasion.Instance) MycariPersuasion.Instance.Remember(_tutorialMycari);
         if (!windmill) yield break;
 
         // Make sure there is visibly something to fix.

@@ -49,6 +49,9 @@ public class TornadoCalamity : MonoBehaviour
     [Min(0f)] public float seekHoldSeconds = 6f;
     [Tooltip("A site below this health (0-1) is left alone, so one bad storm cannot snowball into another.")]
     [Range(0f, 1f)] public float seekSparesBelow = 0.35f;
+    [Tooltip("Most one tornado can take off a site in one pass (fraction of its max health, shield damage included). " +
+             "Intensity then means more frequent storms rather than one storm wrecking the windmill. 0 = no limit.")]
+    [Range(0f, 1f)] public float maxPassDamage01 = 0.35f;
 
     [Header("Damage/Slow")]
     [Tooltip("Player speed multiplier at the core of a full-grown funnel (1 = no slow).")]
@@ -109,6 +112,8 @@ public class TornadoCalamity : MonoBehaviour
 
     // Sites already damaged this physics step (a site with several colliders must not be hit per collider).
     readonly HashSet<TaskSite> _damagedThisStep = new HashSet<TaskSite>();
+    // Damage dealt to each site by the current tornado (for maxPassDamage01).
+    readonly Dictionary<TaskSite, float> _passDamage = new Dictionary<TaskSite, float>();
 
     float ScaledMaxScale => maxScale * intensity;
 
@@ -309,6 +314,7 @@ public class TornadoCalamity : MonoBehaviour
 
     void Activate()
     {
+        _passDamage.Clear();
         _active = true;
         _state = State.Growing;
         _stateT = 0f;
@@ -582,7 +588,16 @@ public class TornadoCalamity : MonoBehaviour
         // Site colliders may sit on children of the TaskSite; damage the site once per physics step.
         var site = other.GetComponentInParent<TaskSite>();
         if (site && site.tornadoCanDamage && _damagedThisStep.Add(site))
-            site.ApplyDamage(siteDamagePerSecond * intensity * Time.deltaTime);
+        {
+            float dmg = siteDamagePerSecond * intensity * Time.deltaTime;
+            _passDamage.TryGetValue(site, out float dealt);
+            if (maxPassDamage01 > 0f) dmg = Mathf.Min(dmg, maxPassDamage01 * site.maxHealth - dealt);
+            if (dmg > 0f)
+            {
+                site.ApplyDamage(dmg);
+                _passDamage[site] = dealt + dmg;
+            }
+        }
     }
 
     /// <summary>

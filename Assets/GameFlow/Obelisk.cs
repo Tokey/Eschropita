@@ -32,6 +32,9 @@ public class Obelisk : MonoBehaviour
     public float coreHealth = 200f;
     [Tooltip("Core health fraction at or below which the obelisk counts as Cracked.")]
     [Range(0.05f, 0.95f)] public float crackedThreshold01 = 0.5f;
+    [Tooltip("A Breaker sent here stays until its layer is down (the whole shield on one trip, the whole core on " +
+             "another) instead of the site's short timed stay, which took about nine round trips.")]
+    public bool breakersFinishTheLayer = true;
 
     [Header("Shards")]
     [Tooltip("Shards scattered around the obelisk when the shield breaks.")]
@@ -178,6 +181,7 @@ public class Obelisk : MonoBehaviour
         _site.allowDismantle = true;
         _site.tornadoCanDamage = false;
         _site.displayName = "Obelisk";
+        if (breakersFinishTheLayer) _site.workDuration = 0f;
 
         // Only seed the numbers when the scene left them at their defaults.
         if (_site.maxShield <= 0f)

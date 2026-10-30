@@ -32,6 +32,8 @@ public class NPCFlocker : MonoBehaviour
 
 
     [Header("Speeds")]
+    [Tooltip("Pace while milling about at home. 0 keeps them standing still there; a Mycari that is away from " +
+             "home (dismissed, refusing, released by the flow) always walks back at the follow speed first.")]
     public float roamSpeed = 2.0f;
     public float followSpeed = 3.5f;
 
@@ -173,6 +175,7 @@ public class NPCFlocker : MonoBehaviour
     float _orbitAngle;
     float _nextWorkRepath;
     float _workEndTime;
+    float _shieldAtWorkStart;
 
     float _stationAngle;
     float _stationDwellEnd;
@@ -931,9 +934,11 @@ public class NPCFlocker : MonoBehaviour
         }
 
         // === Exit condition: goal reached, or timed stay elapsed ===
+        // A dismantle that began on a shield stops when the shield is gone: one visit, one layer, so the
+        // story beat after it (shards, the core exposed) gets its moment.
         bool goalReached = _command == TaskCommand.Repair
             ? _task.health >= _task.maxHealth - 0.001f
-            : _task.IsDestroyed;
+            : _task.IsDestroyed || (_shieldAtWorkStart > 0f && _task.shield <= 0f);
 
         if (goalReached || (_workEndTime > 0f && Time.time >= _workEndTime))
             ExitWorkToRoam();
@@ -942,10 +947,17 @@ public class NPCFlocker : MonoBehaviour
 
     void DoDeclineCooldown()
     {
-        // Roam movement but keep color RED and ignore player
-        DoRoam();
-        if (Time.time >= _cooldownEnd)
-            SwitchToRoam(); // will turn blue again
+        // Red and ignoring the player: on its way home first (keeping the path alive), then milling about there.
+        if (!IsHome())
+        {
+            if (_agent.isOnNavMesh && !_agent.hasPath && !_agent.pathPending &&
+                NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2f, NavMesh.AllAreas))
+                _agent.SetDestination(hit.position);
+        }
+        else DoRoam();
+        // Cooled down and home (or long past the cooldown, if home is out of reach): back to normal, blue again.
+        if (Time.time >= _cooldownEnd && (IsHome() || Time.time >= _cooldownEnd + 30f))
+            RoamHere();
     }
 
     void DoReturnToRoam()
@@ -957,14 +969,28 @@ public class NPCFlocker : MonoBehaviour
                 _agent.SetDestination(hit.position);
         }
 
+        // Arrived (or as close as the NavMesh allows): roam from here.
         if (!_agent.pathPending && _agent.remainingDistance <= waypointReachDist + 0.5f)
-            SwitchToRoam();
+            RoamHere();
     }
 
     public void SwitchToRoam()
     {
         LeaveCurrentActivity();
 
+        // Away from home (dismissed, released by the flow, done refusing): walk back first. Roaming only
+        // steers inside the home area, and at a zero roam speed it would leave the Mycari frozen where it was.
+        if (!IsHome())
+        {
+            GoHome(NPCManager.Instance ? NPCManager.Instance.roamColor : Color.blue);
+            return;
+        }
+        RoamHere();
+    }
+
+    void RoamHere()
+    {
+        LeaveCurrentActivity();
         state = NPCState.Roam;
         SetAgentSpeed(roamSpeed);
         PickNewRoamTarget(true);
@@ -990,12 +1016,36 @@ public class NPCFlocker : MonoBehaviour
         LeaveCurrentActivity();
 
         state = NPCState.DeclineCooldown;
-        SetAgentSpeed(roamSpeed);
         _cooldownEnd = Time.time + declineCooldownSeconds;
         ApplyColor(NPCManager.Instance ? NPCManager.Instance.declineColor : Color.red);
 
-        // start roaming right away so it "goes back" immediately
-        if (!_agent.hasPath) PickNewRoamTarget(true);
+        // It "goes back" immediately: straight home at walking pace, ignoring the player.
+        SetAgentSpeed(followSpeed);
+        _currentRoamTarget = NPCManager.Instance ? NPCManager.Instance.GetRandomNavPointInside() : transform.position;
+        if (_agent.isOnNavMesh && NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2f, NavMesh.AllAreas))
+            _agent.SetDestination(hit.position);
+    }
+
+    /// <summary>Inside the home (roam) area, give or take a metre. True when there is no roam area.</summary>
+    bool IsHome()
+    {
+        var mgr = NPCManager.Instance;
+        if (!mgr || !mgr.roamArea) return true;
+        var b = mgr.roamArea.bounds;
+        b.Expand(new Vector3(2f, 1000f, 2f));
+        return b.Contains(transform.position);
+    }
+
+    /// <summary>Walks back into the home area (ReturnToRoam), then roams there.</summary>
+    void GoHome(Color colour)
+    {
+        state = NPCState.ReturnToRoam;
+        SetAgentSpeed(followSpeed);
+        ResumeAgent();
+        _currentRoamTarget = NPCManager.Instance ? NPCManager.Instance.GetRandomNavPointInside() : transform.position;
+        if (_agent.isOnNavMesh && NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2f, NavMesh.AllAreas))
+            _agent.SetDestination(hit.position);
+        ApplyColor(colour);
     }
 
     void EnterWork()
@@ -1017,6 +1067,7 @@ public class NPCFlocker : MonoBehaviour
 
         // Timed stay only if the site asks for one; otherwise work until the goal is reached.
         _workEndTime = (_task && _task.workDuration > 0f) ? Time.time + _task.workDuration : -1f;
+        _shieldAtWorkStart = _task ? _task.shield : 0f;
 
         // Register with rate 0: the site only uses the entry to show its "repairing" FX.
         // The actual health change is applied per-frame in DoWork.
