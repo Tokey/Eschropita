@@ -299,6 +299,8 @@ public class DialogueSystem : MonoBehaviour
     }
 
     public bool IsPlaying() => _isPlaying;
+    /// <summary>True while the current line is still being typed out.</summary>
+    public bool IsTyping => _isTyping;
 
     // ---------------- Triggers ----------------
 

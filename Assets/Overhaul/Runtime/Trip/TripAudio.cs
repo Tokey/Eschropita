@@ -40,7 +40,14 @@ namespace Eschropita.Overhaul
                 if (Time.unscaledTime >= _nextScan)
                 {
                     _nextScan = Time.unscaledTime + 1f;
-                    Attach(FindAnyObjectByType<AudioListener>());
+                    var l = AudioDirector.Listener;
+                    if (l == null || !l.isActiveAndEnabled)
+                    {
+                        l = null;
+                        foreach (var cand in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+                            if (cand.isActiveAndEnabled) { l = cand; break; }
+                    }
+                    Attach(l);
                 }
             }
 
