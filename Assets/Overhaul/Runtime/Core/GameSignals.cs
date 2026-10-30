@@ -88,6 +88,12 @@ namespace Eschropita.Overhaul
         public static event Action<string> ReportCardShown; // grade id: "excellent" | "moderate" | "poor"
         public static event Action LightPathsRevealed;
 
+        // ---- spore attunement / assessment (overhaul mechanics) -------------------------------------------
+        /// <summary>The player lingered near a Mycari long enough (spore attunement) to perceive its true role.</summary>
+        public static event Action<NPCFlocker> MycariAttuned;
+        /// <summary>A Field Assessment task was completed. (task id: "repair" | "dismantle" | "freedom", new count)</summary>
+        public static event Action<string, int> AssessmentProgress;
+
         // ---- raise helpers (null-safe, exception-isolated so a broken listener never breaks gameplay) ----------
         static void Safe(Action a) { if (a == null) return; foreach (Action d in a.GetInvocationList()) { try { d(); } catch (Exception e) { Debug.LogException(e); } } }
         static void Safe<T>(Action<T> a, T x) { if (a == null) return; foreach (Action<T> d in a.GetInvocationList()) { try { d(x); } catch (Exception e) { Debug.LogException(e); } } }
@@ -140,6 +146,8 @@ namespace Eschropita.Overhaul
         public static void RaiseLoreClosed(string id) => Safe(LoreClosed, id);
         public static void RaiseReportCardShown(string grade) => Safe(ReportCardShown, grade);
         public static void RaiseLightPathsRevealed() => Safe(LightPathsRevealed);
+        public static void RaiseMycariAttuned(NPCFlocker n) => Safe(MycariAttuned, n);
+        public static void RaiseAssessmentProgress(string task, int count) => Safe(AssessmentProgress, task, count);
 
         /// <summary>Clears every subscriber. Called on scene load so stale listeners from a previous scene vanish.</summary>
         public static void ClearAll()
@@ -155,6 +163,7 @@ namespace Eschropita.Overhaul
             CheckpointSaved = null; CheckpointRestored = null; PhaseChanged = null; DialogueLine = null; DialogueEnded = null;
             ToastShown = null; ObjectiveChanged = null; BunkerEntered = null; GroveEntered = null;
             LoreOpened = null; LoreClosed = null; ReportCardShown = null; LightPathsRevealed = null;
+            MycariAttuned = null; AssessmentProgress = null;
         }
     }
 }

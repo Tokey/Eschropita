@@ -18,11 +18,18 @@ namespace Eschropita.Overhaul
         /// <summary>True while an overhaul UI wants the game's own HUD life-support bar hidden (the gauge replaces it).</summary>
         public static bool HideHudLifeBar;
 
+        /// <summary>
+        /// Lets the overhaul decide whether a Mycari accepts a command (e.g. Mycari you have sung with trust you).
+        /// Return null to fall back to the role's acceptance table.
+        /// </summary>
+        public static Func<NPCFlocker, TaskCommand, bool?> AcceptOverride;
+
         public static void Clear()
         {
             PlayBunkerSong = null;
             FinalReport = null;
             HideHudLifeBar = false;
+            AcceptOverride = null;
         }
     }
 }

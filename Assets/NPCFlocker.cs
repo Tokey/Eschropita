@@ -476,6 +476,9 @@ public class NPCFlocker : MonoBehaviour
     /// <summary>Rolls the acceptance chance for a command (role-dependent table on NPCManager).</summary>
     public bool WillAccept(TaskCommand cmd)
     {
+        var hook = Eschropita.Overhaul.OverhaulHooks.AcceptOverride;
+        bool? decided = hook != null ? hook(this, cmd) : null;
+        if (decided.HasValue) return decided.Value;
         var mgr = NPCManager.Instance;
         float chance = mgr ? mgr.GetAcceptChance(role, cmd) : 1f;
         if (chance >= 1f) return true;
