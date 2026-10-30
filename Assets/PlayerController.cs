@@ -64,6 +64,14 @@ public class PlayerController : MonoBehaviour
     public bool HasFollower => currentFollower != null;
     public NPCFlocker CurrentFollower => currentFollower;
 
+    /// <summary>Takes on a Mycari that now follows this player (it heard your song at the grove).</summary>
+    public void AdoptFollower(NPCFlocker npc)
+    {
+        if (npc == null || npc == currentFollower) return;
+        if (currentFollower != null) currentFollower.SwitchToRoam();
+        currentFollower = npc;
+    }
+
     public int Shards => _shards;
     public event System.Action<int> OnShardsChanged;
 
@@ -360,9 +368,17 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 4) Otherwise try to recruit whoever is nearest.
+        // 4) Otherwise ask whoever is nearest. In the sandbox it has to hear your song at the grove before it
+        //    takes orders (MycariPersuasion); before that (the tutorial) it simply tags along.
         if (!currentFollower && _nearNpc != null)
         {
+            var song = MycariPersuasion.Instance;
+            if (song != null && song.Active)
+            {
+                song.TryAsk(_nearNpc, this, out string line);
+                if (!string.IsNullOrEmpty(line)) GameHUD.Instance?.Toast(line, 3f);
+                return;
+            }
             if (_nearNpc.TryRecruit(transform))
             {
                 currentFollower = _nearNpc;
@@ -409,7 +425,11 @@ public class PlayerController : MonoBehaviour
         }
         else if (!currentFollower && _nearNpc != null)
         {
-            prompt = "E  Recruit Mycari";
+            var song = MycariPersuasion.Instance;
+            if (song != null && song.Active)
+                prompt = song.Remembers(_nearNpc) ? "E  Call Mycari" : (song.Busy ? "A Mycari is already waiting at the grove" : "E  Ask Mycari");
+            else
+                prompt = "E  Recruit Mycari";
         }
 
         string hints = currentFollower ? "V  Scan    Q  Dismiss" : "V  Scan";

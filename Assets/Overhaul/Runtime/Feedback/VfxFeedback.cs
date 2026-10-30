@@ -47,6 +47,8 @@ namespace Eschropita.Overhaul
             GameSignals.MycariStrike += OnStrike;
             GameSignals.MycariLeftHome += OnLeftHome;
             GameSignals.MycariAttuned += OnAttuned;
+            GameSignals.MycariAsked += OnRecruited;
+            GameSignals.MycariPersuaded += OnPersuaded;
             GameSignals.SiteRepaired += OnRepaired;
             GameSignals.SiteDepleted += OnDepleted;
             GameSignals.SiteShieldBuilt += OnShieldBuilt;
@@ -83,6 +85,8 @@ namespace Eschropita.Overhaul
             GameSignals.MycariStrike -= OnStrike;
             GameSignals.MycariLeftHome -= OnLeftHome;
             GameSignals.MycariAttuned -= OnAttuned;
+            GameSignals.MycariAsked -= OnRecruited;
+            GameSignals.MycariPersuaded -= OnPersuaded;
             GameSignals.SiteRepaired -= OnRepaired;
             GameSignals.SiteDepleted -= OnDepleted;
             GameSignals.SiteShieldBuilt -= OnShieldBuilt;
@@ -194,6 +198,15 @@ namespace Eschropita.Overhaul
             VfxKit.Ring(n.transform.position, c, 2.4f, 0.7f, 3f);
             VfxKit.Motes(n.transform.position + Vector3.up * 0.6f, 16, c, 0.5f, 1.6f);
             CameraJuice.Punch(n.transform, 0.2f);
+        }
+
+        void OnPersuaded(NPCFlocker n)
+        {
+            if (n == null) return;
+            Color c = RoleColor(n);
+            VfxKit.Ring(n.transform.position, c, 3.4f, 0.9f, 3.5f);
+            VfxKit.Spores(n.transform.position + Vector3.up * 0.5f, 18, c, 1f);
+            CameraJuice.Punch(n.transform, 0.24f, 0.4f);
         }
 
         void OnDeclined(NPCFlocker n)

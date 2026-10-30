@@ -214,6 +214,7 @@ namespace Eschropita.Overhaul
         /// <summary>True if p keeps clear of every gameplay corridor and landmark (for scattering props).</summary>
         public static bool Clear(Vector3 p, float margin)
         {
+            if (OverhaulLandmarks.InRoamArea(p, margin + 2f)) return false;   // the Mycari walk there
             Vector3 g = OverhaulLandmarks.GroveCenter, w = OverhaulLandmarks.Windmill, o = OverhaulLandmarks.Obelisk, h = OverhaulLandmarks.Home, s = OverhaulLandmarks.Spawn;
             if (DistToSegment(p, g, w) < margin + 1.5f || DistToSegment(p, g, o) < margin + 1.5f || DistToSegment(p, g, h) < margin + 1.5f) return false;
             if (DistToSegment(p, s, g) < margin + 1f || DistToSegment(p, s, w) < margin + 1f || DistToSegment(p, s, o) < margin + 1f) return false;

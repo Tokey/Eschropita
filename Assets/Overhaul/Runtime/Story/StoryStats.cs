@@ -39,6 +39,7 @@ namespace Eschropita.Overhaul
         void OnEnable()
         {
             GameSignals.MycariRecruited += OnRecruited;
+            GameSignals.MycariPersuaded += OnRecruited;   // won over at the grove
             GameSignals.MycariStartedWork += OnStarted;
             GameSignals.MycariFinishedWork += OnFinished;
             GameSignals.MycariLeftHome += OnLeftHome;
@@ -56,6 +57,7 @@ namespace Eschropita.Overhaul
         void OnDisable()
         {
             GameSignals.MycariRecruited -= OnRecruited;
+            GameSignals.MycariPersuaded -= OnRecruited;
             GameSignals.MycariStartedWork -= OnStarted;
             GameSignals.MycariFinishedWork -= OnFinished;
             GameSignals.MycariLeftHome -= OnLeftHome;

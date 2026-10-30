@@ -91,6 +91,10 @@ namespace Eschropita.Overhaul
         // ---- spore attunement / assessment (overhaul mechanics) -------------------------------------------
         /// <summary>The player lingered near a Mycari long enough (spore attunement) to perceive its true role.</summary>
         public static event Action<NPCFlocker> MycariAttuned;
+        /// <summary>The player asked a Mycari to hear their song; it is walking to the grove.</summary>
+        public static event Action<NPCFlocker> MycariAsked;
+        /// <summary>A Mycari heard the player's song (or remembered it) and now follows, taking orders.</summary>
+        public static event Action<NPCFlocker> MycariPersuaded;
         /// <summary>A Field Assessment task was completed. (task id: "repair" | "dismantle" | "freedom", new count)</summary>
         public static event Action<string, int> AssessmentProgress;
 
@@ -147,6 +151,8 @@ namespace Eschropita.Overhaul
         public static void RaiseReportCardShown(string grade) => Safe(ReportCardShown, grade);
         public static void RaiseLightPathsRevealed() => Safe(LightPathsRevealed);
         public static void RaiseMycariAttuned(NPCFlocker n) => Safe(MycariAttuned, n);
+        public static void RaiseMycariAsked(NPCFlocker n) => Safe(MycariAsked, n);
+        public static void RaiseMycariPersuaded(NPCFlocker n) => Safe(MycariPersuaded, n);
         public static void RaiseAssessmentProgress(string task, int count) => Safe(AssessmentProgress, task, count);
 
         /// <summary>Clears every subscriber. Called on scene load so stale listeners from a previous scene vanish.</summary>
@@ -163,7 +169,7 @@ namespace Eschropita.Overhaul
             CheckpointSaved = null; CheckpointRestored = null; PhaseChanged = null; DialogueLine = null; DialogueEnded = null;
             ToastShown = null; ObjectiveChanged = null; BunkerEntered = null; GroveEntered = null;
             LoreOpened = null; LoreClosed = null; ReportCardShown = null; LightPathsRevealed = null;
-            MycariAttuned = null; AssessmentProgress = null;
+            MycariAttuned = null; MycariAsked = null; MycariPersuaded = null; AssessmentProgress = null;
         }
     }
 }

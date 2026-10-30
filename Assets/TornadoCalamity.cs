@@ -37,6 +37,19 @@ public class TornadoCalamity : MonoBehaviour
     [Tooltip("A StrikeAt() tornado spawns this far from its target and bears down on it.")]
     [Min(0f)] public float strikeSpawnDistance = 20f;
 
+    [Header("Ground")]
+    [Tooltip("Keep the funnel on the ground under it (the terrain, else the first collider below), whatever height " +
+             "the anchor has. Without it a tornado anchored at y = 0 travels under a raised terrain: unseen and harmless.")]
+    public bool followGround = true;
+
+    [Header("Seeking (random tornadoes)")]
+    [Tooltip("Chance (times intensity) that a random tornado goes for a site it can damage, the windmill first, " +
+             "instead of wandering: it bears down on it like a strike and weaves over it for seekHoldSeconds.")]
+    [Range(0f, 1f)] public float seekChance = 0.4f;
+    [Min(0f)] public float seekHoldSeconds = 6f;
+    [Tooltip("A site below this health (0-1) is left alone, so one bad storm cannot snowball into another.")]
+    [Range(0f, 1f)] public float seekSparesBelow = 0.35f;
+
     [Header("Damage/Slow")]
     [Tooltip("Player speed multiplier at the core of a full-grown funnel (1 = no slow).")]
     [Range(0.05f, 1f)] public float playerSlowMultiplier = 0.4f;
@@ -235,7 +248,7 @@ public class TornadoCalamity : MonoBehaviour
             }
 
             if (_strikeRequested) ConsumeStrikeRequest();
-            else _striking = false;
+            else if (!TryBeginSeek()) _striking = false;
 
             Activate();
             yield return RunLifecycle();
@@ -251,6 +264,47 @@ public class TornadoCalamity : MonoBehaviour
         _strikeHoldSeconds = _requestedStrikeHold;
         _strikeArrived = false;
         _strikeHoldT = 0f;
+    }
+
+    /// <summary>Rolls <see cref="seekChance"/>; on success the coming tornado strikes a damageable site.</summary>
+    bool TryBeginSeek()
+    {
+        if (Random.value >= Mathf.Clamp01(seekChance * intensity)) return false;
+        var site = PickSeekTarget();
+        if (site == null) return false;
+        _striking = true;
+        _strikeTarget = site.transform.position;
+        _strikeHoldSeconds = seekHoldSeconds;
+        _strikeArrived = false;
+        _strikeHoldT = 0f;
+        return true;
+    }
+
+    TaskSite PickSeekTarget()
+    {
+        var tm = TaskManager.Instance;
+        if (tm == null) return null;
+        var power = tm.FindByType(TaskType.PowerPlant);
+        if (Fair(power)) return power;
+        TaskSite pick = null;
+        int seen = 0;
+        foreach (var s in tm.Sites)
+            if (Fair(s) && Random.Range(0, ++seen) == 0) pick = s;   // uniform among the fair targets
+        return pick;
+    }
+
+    bool Fair(TaskSite s) => s != null && s.tornadoCanDamage && s.isActiveAndEnabled && s.Health01 >= seekSparesBelow;
+
+    void SnapToGround()
+    {
+        if (!followGround) return;
+        Vector3 p = transform.position;
+        var t = Terrain.activeTerrain;
+        float y;
+        if (t != null) y = t.SampleHeight(p) + t.transform.position.y;
+        else if (Physics.Raycast(new Vector3(p.x, p.y + 100f, p.z), Vector3.down, out var hit, 300f, ~0, QueryTriggerInteraction.Ignore)) y = hit.point.y;
+        else return;
+        transform.position = new Vector3(p.x, y, p.z);
     }
 
     void Activate()
@@ -279,6 +333,7 @@ public class TornadoCalamity : MonoBehaviour
             transform.position = GetClampedAnchor() + RandomOnRing(orbitMinRadius, orbitMaxRadius);
             PickNewWanderTarget(true);
         }
+        SnapToGround();
 
         ApplyScale(0f);
 
@@ -361,6 +416,7 @@ public class TornadoCalamity : MonoBehaviour
 
             if (_striking) MoveToStrike(dt);
             else MoveWander(dt);
+            SnapToGround();
 
             yield return null;
         }

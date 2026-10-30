@@ -36,8 +36,15 @@ public class NPCManager : MonoBehaviour
              "out instead of converging on one spot.")]
     [Min(0f)] public float minRoamTargetSpacing = 3f;
 
+    [Tooltip("Roam targets stay at least this far outside the mushroom grove, so idle Mycari don't stand on the " +
+             "singing mushrooms (the widened roam box reaches into the grove).")]
+    [Min(0f)] public float groveKeepOut = 2f;
+
     // Roam targets handed out recently, used to keep successive picks apart.
     readonly List<Vector3> _recentRoamTargets = new List<Vector3>();
+    MushroomFieldTrigger _grove;
+    Collider _groveCollider;
+    bool _groveSearched;
 
     [Header("Decision Zone (BoxCollider)")]
     public BoxCollider decisionZone;
@@ -168,6 +175,7 @@ public class NPCManager : MonoBehaviour
             Vector3 randomPoint = center + randomOffset;
 
             if (!NavMesh.SamplePosition(randomPoint, out var hit, 2f, NavMesh.AllAreas)) continue;
+            if (InGrove(hit.position)) continue;
 
             if (!haveFallback) { fallback = hit.position; haveFallback = true; }
 
@@ -179,6 +187,27 @@ public class NPCManager : MonoBehaviour
 
         if (haveFallback) RememberRoamTarget(fallback);
         return fallback;
+    }
+
+    /// <summary>True inside the mushroom grove (its trigger's footprint plus <see cref="groveKeepOut"/>).</summary>
+    bool InGrove(Vector3 p)
+    {
+        if (!_groveSearched)
+        {
+            _groveSearched = true;
+            _grove = FindAnyObjectByType<MushroomFieldTrigger>();
+            _groveCollider = _grove ? _grove.GetComponent<Collider>() : null;
+        }
+        if (!_grove) return false;
+        if (_groveCollider)
+        {
+            var b = _groveCollider.bounds;
+            return p.x > b.min.x - groveKeepOut && p.x < b.max.x + groveKeepOut &&
+                   p.z > b.min.z - groveKeepOut && p.z < b.max.z + groveKeepOut;
+        }
+        Vector3 d = p - _grove.Center;
+        d.y = 0f;
+        return d.magnitude < 6f + groveKeepOut;
     }
 
     bool TooCloseToRecent(Vector3 p)

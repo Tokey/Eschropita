@@ -9,20 +9,24 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 | Key | What it does |
 |---|---|
 | **E** | Interact (as before) — also reads lore terminals (E / Esc to close, W/S to scroll) |
-| **F7** | Spore-trip strength: 100 % → 50 % → off (remembered) |
+| **F7** | Spore-trip strength: 100 % → 50 % → off (remembered; scales the hit/miss flashes too) |
 | **F9** | Toggle the redesigned level dressing vs. the original visuals (before/after) |
 | **F10** | Toggle the new UI type vs. the original type (before/after) |
 
 ## What's in it
 
-- **Spore trip (psychedelic effect)** — mild when Mycari are close, intense inside the mushroom grove. Picture: hue drift,
-  saturation, breathing lens distortion, chromatic fringes, rainbow bloom, a liquid warp pass with ripples from each mushroom
-  note, slow camera roll. Sound: pitch "wow", chorus/flanger, reverb and low-pass on the whole mix + a shimmer pad. Mushroom
-  note colours stay readable while a song plays. **Focus:** while the mushrooms sing and you answer them, the spores
-  settle (about 40 % calmer, a bit more when you stand still and listen) so the puzzle is easy to follow; solving the song
-  lets the full trip bloom back. Tune it on `TripDirector` → *Focus while doing the mushroom puzzle* (`puzzleCalm`,
-  `stillnessCalm`, `settleSeconds`, `bloomBackSeconds`). Lingering patiently next to a Mycari *attunes* you to it: its role colour
-  (blue Fixer / red Breaker / green Wanderer) is revealed without Daffodil's scanner.
+- **Spore trip (psychedelic effect)** — kept faint so everything stays visible: a slight shimmer near Mycari, a little
+  more in the grove. It only peaks on your answers to a mushroom song, and the two look and sound different:
+  - **Hit** (right mushroom, solved song): warm and harmonious, with golden bloom, a lift toward the note's colour, a
+    gentle outward breath, a ring of light rolling out from the pad, and a reverb/pad swell. A solved song blooms
+    longest.
+  - **Miss** (wrong mushroom): cold and dissonant, with drained colour, magenta/cyan toning, hard colour fringes, a
+    pinch, a violet vignette, slices of the picture shivering sideways, a short camera shake, and the whole mix going
+    off-key for a moment.
+
+  Tune it on `TripDirector` (ambient levels, `hitSeconds` / `solvedSeconds` / `missSeconds`). Lingering patiently next
+  to a Mycari *attunes* you to it: its role colour (blue Fixer / red Breaker / green Wanderer) is revealed without
+  Daffodil's scanner.
 - **Music & sound from Alexander's tracks** — 80 cues (see `Tools/SoundLibrary/SOUND_LIBRARY.md` for every source + time
   range). Adaptive score: exploration theme that slowly evolves, grove playlist, storm, obelisk, bunker/lore, report song,
   tension bass as life support falls, near-silence while the mushrooms sing. A sound for every interaction, Mycari answer
@@ -45,9 +49,23 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
   Danu verbatim; Hargrave, the surveillance dossier and the JoyTech brochure are marked DRAFT in
   `Assets/Overhaul/Resources/Overhaul/Lore/`), graded report card from Reishi, Chaga and Maitake (Excellent / Moderate /
   Poor endings), animated life-support gauge, objective banner, light paths revealed by the first song.
-- **Balance** (`GameBalance`, runtime only) — gentler life-support drain with an emergency reserve below 25 %, faster
-  recovery, adaptive melody length (4 → 6, eases off after two misses), Mycari you've sung with accept any command,
-  softer tornado damage.
+- **Winning Mycari over** (game code: `Assets/GameFlow/MycariPersuasion.cs`) — in the sandbox, asking a Mycari (E)
+  sends it to the mushroom grove. Meet it there and it sings its melody on the mushrooms. Sing it back and it listens:
+  it follows you and takes any order. A wrong note and it turns red, wanders home, and won't hear you out for 20 s.
+  A Mycari you've won over remembers your song (the tutorial Fixer too): ask again and it follows at once. One song
+  at a time. Melodies start at 4 notes (Breakers 5), grow every two Mycari won (up to +2), and drop a note after a
+  miss.
+- **Balance** (`GameBalance`, runtime only) — with the windmill at a quarter health, life support lasts about two
+  minutes: about 70 s to the 25 % alarm, then an emergency reserve halves the drain. That's time for a song, a miss
+  and a retry. Recovery is quick once the windmill turns again. Tornadoes do 2.5 health per second.
+- **Tornado fixes** (game code: `TornadoCalamity`) — the funnel now follows the ground. Its anchor sat at y = 0,
+  about 8 m under the terrain, so random tornadoes were invisible and never hit anything. Random tornadoes now also
+  go for the windmill 40 % of the time (more while the obelisk sings): they bear down on it and weave over it for
+  about 6 s, taking roughly 30 % of its health. They leave a windmill below 35 % alone.
+- **Mycari pathing** — the JoyTech dome stood on top of the Mycari's roam area, and its walls cut their NavMesh,
+  trapping them. Structures and props now keep clear of the roam area and the walks between landmarks. The dome
+  moved behind the home, outside it. Idle Mycari also stay out of the mushroom grove (`NPCManager.groveKeepOut`), so
+  they no longer stand on the singing mushrooms; the widened roam box reached into it.
 - **Level** — Mars wind turbine (spins with windmill health, fungal repair patches, shard-shield plates), visible
   life-support plant with conduits to the dome door, organic glowing grove floor, JoyTech biodome + airlock door,
   Escropita's lander, ruins, surveillance masts, bunker hatch, horizon landmarks. Textures: CC0 Poly Haven

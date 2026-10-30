@@ -52,23 +52,30 @@ namespace Eschropita.Overhaul
             }
 
             float I = TripDirector.Intensity;
+            float hit = TripDirector.HitPulse, miss = TripDirector.MissPulse;
             float deep = TripDirector.InGrove ? Mathf.Clamp01((I - 0.45f) / 0.55f) : 0f;
             float t = TripDirector.Clock;
             bool song = TripDirector.SongActive;
 
-            if (_dsp != null) _dsp.SetIntensity(song ? I * 0.55f : I, song ? deep * 0.4f : deep);
+            // A wrong note bends the whole mix off-key for a moment; a right one only blooms (reverb + pad below).
+            if (_dsp != null)
+            {
+                _dsp.SetIntensity(Mathf.Max(song ? I * 0.55f : I, miss * 0.8f), song ? deep * 0.4f : deep);
+                _dsp.SetSour(miss);
+            }
 
             if (_reverb != null)
             {
-                bool on = I > 0.02f;
+                float bloom = Mathf.Max(I, hit * 0.7f);
+                bool on = bloom > 0.02f;
                 if (_reverb.enabled != on) _reverb.enabled = on;
                 if (on)
                 {
-                    float e = Mathf.SmoothStep(0f, 1f, I);
+                    float e = Mathf.SmoothStep(0f, 1f, bloom);
                     _reverb.dryLevel = 0f;
                     _reverb.room = Mathf.Lerp(-10000f, -650f, e);
                     _reverb.roomHF = -900f;
-                    _reverb.decayTime = 1.4f + 4.2f * I;
+                    _reverb.decayTime = 1.4f + 4.2f * bloom;
                     _reverb.decayHFRatio = 0.55f;
                     _reverb.reflectionsLevel = Mathf.Lerp(-10000f, -1400f, e);
                     _reverb.reverbLevel = Mathf.Lerp(-10000f, song ? -900f : -250f, e);
@@ -92,8 +99,8 @@ namespace Eschropita.Overhaul
 
             if (_pad != null && _pad.clip != null)
             {
-                float v = padVolume * Mathf.Pow(I, 1.4f) * (song ? 0.45f : 1f);
-                _pad.volume = Mathf.MoveTowards(_pad.volume, v, Time.deltaTime * 0.6f);
+                float v = padVolume * (Mathf.Pow(I, 1.4f) * (song ? 0.45f : 1f) + 0.6f * hit);
+                _pad.volume = Mathf.MoveTowards(_pad.volume, v, Time.unscaledDeltaTime * (v > _pad.volume ? 2.5f : 0.6f));
                 _pad.pitch = 1f + 0.012f * Mathf.Sin(t * 0.3f);
                 if (_pad.volume > 0.001f && !_pad.isPlaying) _pad.Play();
                 else if (_pad.volume <= 0.001f && _pad.isPlaying) _pad.Stop();

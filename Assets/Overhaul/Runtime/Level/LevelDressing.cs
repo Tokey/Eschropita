@@ -77,7 +77,8 @@ namespace Eschropita.Overhaul
             {
                 var home = GameObject.Find("MycariHome");
                 if (home != null) HideRenderers(home);
-                JoyTechDome.Build(_root, OverhaulLandmarks.DomeCenter, OverhaulLandmarks.DomeRadius, OverhaulLandmarks.Home, OverhaulLandmarks.DoorFacing);
+                if (OverhaulLandmarks.DomeCenter != Vector3.zero)   // zero: no spot clear of the Mycari's roam area
+                    JoyTechDome.Build(_root, OverhaulLandmarks.DomeCenter, OverhaulLandmarks.DomeRadius, OverhaulLandmarks.Home, OverhaulLandmarks.DoorFacing);
             });
             yield return null;
             Try("Colony props", () => ColonyProps.Build(_root));

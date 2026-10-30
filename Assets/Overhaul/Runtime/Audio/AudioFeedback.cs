@@ -43,6 +43,8 @@ namespace Eschropita.Overhaul
             GameSignals.MycariStrike += OnStrike;
             GameSignals.MycariLeftHome += OnLeftHome;
             GameSignals.MycariAttuned += OnAttuned;
+            GameSignals.MycariAsked += OnRecruited;
+            GameSignals.MycariPersuaded += OnPersuaded;
             GameSignals.PadSang += OnPadSang;
             GameSignals.PadPressed += OnPadPressed;
             GameSignals.PuzzlePlayerTurn += OnPlayerTurn;
@@ -90,6 +92,8 @@ namespace Eschropita.Overhaul
             GameSignals.MycariStrike -= OnStrike;
             GameSignals.MycariLeftHome -= OnLeftHome;
             GameSignals.MycariAttuned -= OnAttuned;
+            GameSignals.MycariAsked -= OnRecruited;
+            GameSignals.MycariPersuaded -= OnPersuaded;
             GameSignals.PadSang -= OnPadSang;
             GameSignals.PadPressed -= OnPadPressed;
             GameSignals.PuzzlePlayerTurn -= OnPlayerTurn;
@@ -172,6 +176,7 @@ namespace Eschropita.Overhaul
         // ---- Mycari ------------------------------------------------------------------------------------------
         void OnRecruited(NPCFlocker n) { Sfx.Play("sfx.recruit", At(n)); Speak(n, 0.18f); }
         void OnDeclined(NPCFlocker n) { Sfx.Play("sfx.decline", At(n)); Speak(n, 0.12f, 0.84f); }
+        void OnPersuaded(NPCFlocker n) { Sfx.Play("sfx.attune", At(n), 0.8f); Speak(n, 0.3f, 1.12f); }
         void OnDismissed(NPCFlocker n) => Sfx.Play("sfx.dismiss", At(n), 0.8f);
 
         void OnCommanded(NPCFlocker n, TaskSite site, TaskCommand cmd)

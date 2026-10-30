@@ -115,6 +115,7 @@ namespace Eschropita.Overhaul
                 if (NearExit(a, exitAngles, 0.32f)) continue;
                 float rr = rim(a) * 1.2f + 0.8f;
                 Vector3 sp = new Vector3(c.x + Mathf.Cos(a) * rr, 0f, c.z + Mathf.Sin(a) * rr);
+                if (OverhaulLandmarks.InRoamArea(sp, 1.5f)) { placed++; continue; }   // never in the Mycari's way
                 sp.y = LevelKit.GroundY(sp.x, sp.z) - 0.2f;
                 Stone(root, sp, LevelKit.Rand(rng, 1.4f, 2.6f), rng);
                 stones.Add(sp);

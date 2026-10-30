@@ -41,6 +41,9 @@ public class MartianSequencePuzzle : MonoBehaviour
     public float stepDelay = 0.15f;
     [Tooltip("How long a pad stays green (correct) or red (wrong) after the player presses it.")]
     public float feedbackHold = 1f;
+    [Tooltip("After a wrong pad the sequence replays and the player tries again (the tutorial). Off: the attempt " +
+             "simply ends after the red feedback and the pads go idle (a Mycari hearing your song only gives you one go).")]
+    public bool replayAfterWrong = true;
 
     [Header("Demo (Mycari walks the pads)")]
     [Tooltip("The demo Mycari counts as at a pad once it is within this distance (metres) of where it was " +
@@ -568,6 +571,18 @@ public class MartianSequencePuzzle : MonoBehaviour
 
         // Step 3: Reset all pads to idle
         SetAllPadsIdle();
+
+        if (!replayAfterWrong)
+        {
+            // One go only: the attempt is over. The pads rest until someone starts the puzzle again.
+            inputIndex = 0;
+            playerTurn = false;
+            sequencePlaying = false;
+            showingFeedback = false;
+            started = false;
+            _mainRoutine = null;
+            yield break;
+        }
 
         // Step 4: Small pause before replaying sequence
         yield return new WaitForSeconds(0.3f);

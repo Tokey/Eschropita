@@ -5,10 +5,12 @@ namespace Eschropita.Overhaul
 {
     /// <summary>
     /// Spore attunement (the "trip"). The Mycari and their grove breathe spores; standing near them is consensual
-    /// exposure (design doc: "spores to be consensually taken up"). This module turns proximity into one smoothed
-    /// intensity that the trip visuals, the trip audio and the music read:
-    ///   - mild near a Mycari (stronger the closer it is, a little more for every extra Mycari around you)
-    ///   - intense inside the mushroom grove, ramping up as you approach it
+    /// exposure (design doc: "spores to be consensually taken up"). Two things come out of this module:
+    ///   - a low ambient intensity, so the world always stays clearly visible: a faint shimmer near a Mycari, a
+    ///     little more inside the mushroom grove;
+    ///   - two short, strong event flashes that only the mushroom song triggers, each with its own look and sound:
+    ///     <see cref="HitPulse"/> when you hit the right mushroom (warm, harmonious, a ring of light from the pad;
+    ///     a solved song blooms longest) and <see cref="MissPulse"/> when you miss (cold, dissonant, a shiver).
     /// It also runs the attunement mechanic: linger patiently (walk slowly) beside a Mycari and you perceive its
     /// true role colour without Daffodil's scanner (patience reveals; the mushroom song persuades).
     /// Focus: while the mushrooms sing and you answer them, the spores settle (the trip eases off, a little more
@@ -22,8 +24,14 @@ namespace Eschropita.Overhaul
 
         /// <summary>Final 0..1 intensity, after smoothing and the player's comfort setting.</summary>
         public static float Intensity => Instance != null ? Instance._intensity : 0f;
-        /// <summary>0..1 extra kick from musical moments (mushroom notes, recruits); decays in about a second.</summary>
-        public static float Pulse => Instance != null ? Instance._pulse : 0f;
+        /// <summary>0..1, the stronger of the two event flashes (for anything that just wants "a musical moment").</summary>
+        public static float Pulse => Mathf.Max(HitPulse, MissPulse);
+        /// <summary>0..1 flash from a right note (or a solved song, which lasts longer); decays in about a second.</summary>
+        public static float HitPulse => Instance != null ? Instance._hit * Instance._userScale : 0f;
+        /// <summary>0..1 flash from a wrong note; decays in under a second.</summary>
+        public static float MissPulse => Instance != null ? Instance._miss * Instance._userScale : 0f;
+        /// <summary>Seconds since the last hit (drives the ring of light spreading from the pad).</summary>
+        public static float HitAge => Instance != null ? Time.unscaledTime - Instance._hitAt : 99f;
         /// <summary>Trip clock: advances faster the deeper the trip (drives every oscillation so they stay in sync).</summary>
         public static float Clock => Instance != null ? Instance._clock : 0f;
         /// <summary>True while the player is inside the grove (intense level).</summary>
@@ -39,17 +47,25 @@ namespace Eschropita.Overhaul
         /// <summary>0..1 how settled the spores are while the mushroom song is on (already applied to <see cref="Intensity"/>).</summary>
         public static float Focus => Instance != null ? Instance._focus : 0f;
 
-        [Header("Mycari proximity (mild)")]
+        [Header("Mycari proximity (faint)")]
         public float mycariFullDistance = 1.8f;
         public float mycariStartDistance = 9f;
-        public float mycariMaxIntensity = 0.42f;
-        public float extraMycariBonus = 0.07f;
-        public float mycariCap = 0.6f;
+        public float mycariMaxIntensity = 0.12f;
+        public float extraMycariBonus = 0.02f;
+        public float mycariCap = 0.16f;
 
-        [Header("Mushroom grove (intense)")]
-        public float groveIntensity = 1f;
-        public float groveApproachIntensity = 0.55f;
+        [Header("Mushroom grove (a little more)")]
+        public float groveIntensity = 0.25f;
+        public float groveApproachIntensity = 0.12f;
         public float groveApproachDistance = 7f;
+
+        [Header("Song flashes")]
+        [Tooltip("Seconds a right note's flash takes to fade.")]
+        public float hitSeconds = 1.1f;
+        [Tooltip("Seconds a solved song's bloom takes to fade.")]
+        public float solvedSeconds = 2.4f;
+        [Tooltip("Seconds a wrong note's shiver takes to fade.")]
+        public float missSeconds = 0.85f;
 
         [Header("Focus while doing the mushroom puzzle")]
         [Tooltip("How much the trip settles while the mushrooms sing and you answer them (0 = unchanged, 1 = gone). " +
@@ -74,7 +90,8 @@ namespace Eschropita.Overhaul
         const string PrefKey = "Eschropita.TripStrength";
         static readonly float[] Strengths = { 1f, 0.5f, 0f };
 
-        float _intensity, _raw, _pulse, _clock, _userScale = 1f, _focus, _groveNear;
+        float _intensity, _raw, _clock, _userScale = 1f, _focus, _groveNear;
+        float _hit, _miss, _hitFade = 1f, _hitAt = -99f;
         bool _inGrove, _songActive;
         Color _tint = Color.white;
         Color _noteTint = OverhaulPalette.SporeCyan;
@@ -133,14 +150,27 @@ namespace Eschropita.Overhaul
             return null;
         }
 
-        void OnPadSang(int pad, Vector3 pos) { Kick(0.85f, pos); _noteTint = NoteColor(pad); }
-        void OnPadPressed(int pad, Vector3 pos, bool ok) { Kick(ok ? 0.7f : 0.35f, pos); if (ok) _noteTint = NoteColor(pad); }
-        void OnSolved(Vector3 pos) => Kick(1f, pos);
-        void OnRecruited(NPCFlocker n) { if (n != null) Kick(0.55f, n.transform.position); }
-
-        void Kick(float amount, Vector3 at)
+        // The demo's notes only ripple faintly: the big flashes belong to the player's own answers.
+        void OnPadSang(int pad, Vector3 pos) { _noteTint = NoteColor(pad); Hit(0.22f, pos, hitSeconds); }
+        void OnPadPressed(int pad, Vector3 pos, bool ok)
         {
-            _pulse = Mathf.Max(_pulse, amount);
+            if (ok) { _noteTint = NoteColor(pad); Hit(0.7f, pos, hitSeconds); }
+            else Miss(pos);
+        }
+        void OnSolved(Vector3 pos) => Hit(1f, pos, solvedSeconds);
+        void OnRecruited(NPCFlocker n) { if (n != null) Hit(0.25f, n.transform.position, hitSeconds); }
+
+        void Hit(float amount, Vector3 at, float seconds)
+        {
+            if (amount >= _hit * 0.8f) { _hitAt = Time.unscaledTime; _pulseSource = at; }
+            if (amount >= _hit) { _hit = amount; _hitFade = Mathf.Max(0.1f, seconds); }   // a faint note never cuts a bloom short
+            _miss = 0f;
+        }
+
+        void Miss(Vector3 at)
+        {
+            _miss = 1f;
+            _hit = 0f;
             _pulseSource = at;
         }
 
@@ -245,10 +275,11 @@ namespace Eschropita.Overhaul
             float focusSeconds = Mathf.Max(0.05f, focusTarget > _focus ? settleSeconds : bloomBackSeconds);
             _focus = Mathf.Lerp(_focus, focusTarget, 1f - Mathf.Exp(-dt * 3f / focusSeconds));
 
-            target = Mathf.Clamp01(target + _pulse * 0.12f);
             float rate = target > _raw ? riseRate : fallRate;
             _raw = Mathf.MoveTowards(_raw, target, rate * dt);
-            _pulse = Mathf.MoveTowards(_pulse, 0f, dt * 1.2f);
+            float udt = Time.unscaledDeltaTime;   // flashes keep their timing through hit-stops
+            _hit = Mathf.MoveTowards(_hit, 0f, udt / _hitFade);
+            _miss = Mathf.MoveTowards(_miss, 0f, udt / Mathf.Max(0.1f, missSeconds));
             _intensity = Mathf.Clamp01(_raw * (1f - _focus) * _userScale);
             _clock += dt * (0.35f + 1.1f * _intensity);
 
@@ -281,7 +312,7 @@ namespace Eschropita.Overhaul
                 _attuned.Add(nearest);
                 _attune.Remove(nearest);
                 if (nearest.GetComponent<MycariAura>() == null) nearest.gameObject.AddComponent<MycariAura>();
-                Kick(1f, nearest.transform.position);
+                Hit(0.5f, nearest.transform.position, hitSeconds);
                 GameSignals.RaiseMycariAttuned(nearest);
             }
         }

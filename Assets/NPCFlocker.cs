@@ -487,23 +487,45 @@ public class NPCFlocker : MonoBehaviour
     }
 
     /// <summary>
-    /// Player gives an order. Requires the NPC to be following (FollowToDecision / AwaitDecision /
-    /// FollowApproved) and the site to allow the command. A refusal puts the NPC into decline cooldown.
-    /// Returns true when the NPC accepted and is now heading to the site.
-    /// </summary>
-    /// <summary>
-    /// True once the player has learned the melody. Until then a Mycari will follow you around
-    /// quite happily but has no idea what you are asking it to do.
+    /// True when this Mycari will take an order. Before the melody is learned none will. In the sandbox a
+    /// Mycari has to hear your song at the grove first (<see cref="MycariPersuasion"/>), after which it
+    /// follows in the FollowApproved state, listening.
     /// </summary>
     public bool CanBeCommanded
     {
         get
         {
             var flow = GameFlowManager.Instance;
-            return flow == null || flow.MycariObey;
+            if (flow != null && !flow.MycariObey) return false;
+            var song = MycariPersuasion.Instance;
+            return song == null || !song.Active || state == NPCState.FollowApproved;
         }
     }
 
+    /// <summary>True while it follows the player having heard the song: it takes any order.</summary>
+    public bool Listening => state == NPCState.FollowApproved;
+
+    /// <summary>The song worked: follow <paramref name="player"/> and take orders (FollowApproved).</summary>
+    public void ListenTo(Transform player)
+    {
+        if (player == null) return;
+        LeaveCurrentActivity();
+        followTarget = player;
+        state = NPCState.FollowApproved;
+        SetAgentSpeed(followSpeed);
+        ResumeAgent();
+        ApplyColor(NPCManager.Instance ? NPCManager.Instance.taskColor : Color.green);
+    }
+
+    /// <summary>The song failed (or was abandoned): turn red and wander back home.</summary>
+    public void WalkOff() => EnterDeclineCooldown();
+
+    /// <summary>
+    /// Player gives an order. Requires the NPC to be following (FollowToDecision / AwaitDecision /
+    /// FollowApproved) and the site to allow the command. A Mycari that heard your song (Listening)
+    /// always accepts; any other rolls its role's acceptance and a refusal puts it into decline cooldown.
+    /// Returns true when the NPC accepted and is now heading to the site.
+    /// </summary>
     public bool CommandTask(TaskSite site, TaskCommand cmd)
     {
         if (site == null) return false;
@@ -516,7 +538,7 @@ public class NPCFlocker : MonoBehaviour
 
         if (!SiteAllows(site, cmd)) return false;
 
-        if (!WillAccept(cmd))
+        if (!Listening && !WillAccept(cmd))
         {
             EnterDeclineCooldown();
             return false;

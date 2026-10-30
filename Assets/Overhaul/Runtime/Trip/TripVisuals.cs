@@ -7,21 +7,23 @@ using UnityEngine.Rendering.HighDefinition;
 namespace Eschropita.Overhaul
 {
     /// <summary>
-    /// What the spore trip looks like. Two layers, both driven by <see cref="TripDirector"/>:
-    ///  1. A high-priority global Volume whose weight follows the trip intensity: drifting hue, boosted saturation,
-    ///     breathing lens distortion, chromatic fringes, rainbow-tinted bloom and vignette, wavering white balance.
-    ///     Robust (stock HDRP overrides) — this alone carries the effect.
-    ///  2. A fullscreen custom pass ("Hidden/Eschropita/TripWarp") that liquefies the image: swirling, breathing
-    ///     domain warp, ripples that radiate from each mushroom note, colour splitting along the flow and, in the
-    ///     grove, a kaleidoscope ghost. Skipped automatically if the shader is unavailable or failed to compile.
-    /// Plus a slow camera roll applied after Cinemachine each frame. Mushroom note colours stay readable: while a
-    /// melody is playing or waiting for the player the hue drift is damped.
+    /// What the spore trip looks like. Three looks, mixed by <see cref="TripDirector"/>'s ambient intensity and its
+    /// two song flashes, each clearly different:
+    ///  - Ambient (faint, always readable): a little extra saturation and a soft hue sway near the Mycari and in
+    ///    the grove. No distortion, no camera motion.
+    ///  - Hit (right mushroom, solved song): warm and harmonious, with golden bloom, a lift in exposure and colour
+    ///    toward the note, a gentle outward "breath", and a ring of light rolling out from the pad (warp pass).
+    ///  - Miss (wrong mushroom): cold and dissonant, with draining colour, magenta/cyan split toning, hard colour
+    ///    fringes, a pinch, a dark violet vignette, a horizontal shiver (warp pass) and a short camera shake.
+    /// Stock HDRP overrides on a high-priority volume, plus a fullscreen pass ("Hidden/Eschropita/TripWarp") that
+    /// switches itself off if the shader is unavailable.
     /// </summary>
     [OverhaulModule(16)]
     public class TripVisuals : MonoBehaviour
     {
         public float volumePriority = 120f;
-        public float maxRollDegrees = 3.2f;
+        [Tooltip("Peak roll of the miss shake, in degrees.")]
+        public float missShakeDegrees = 1.6f;
 
         Volume _volume;
         VolumeProfile _profile;
@@ -32,8 +34,6 @@ namespace Eschropita.Overhaul
         Vignette _vignette;
         WhiteBalance _white;
         SplitToning _split;
-        PaniniProjection _panini;
-        ChannelMixer _mixer;
 
         CustomPassVolume _passVolume;
         TripWarpPass _pass;
@@ -42,11 +42,11 @@ namespace Eschropita.Overhaul
 
         static readonly int IdIntensity = Shader.PropertyToID("_TripIntensity");
         static readonly int IdTime = Shader.PropertyToID("_TripTime");
-        static readonly int IdPulse = Shader.PropertyToID("_TripPulse");
+        static readonly int IdHit = Shader.PropertyToID("_TripHit");
+        static readonly int IdHitAge = Shader.PropertyToID("_TripHitAge");
+        static readonly int IdMiss = Shader.PropertyToID("_TripMiss");
         static readonly int IdPulseCenter = Shader.PropertyToID("_TripPulseCenter");
         static readonly int IdTint = Shader.PropertyToID("_TripTint");
-        static readonly int IdHue = Shader.PropertyToID("_TripHueDrift");
-        static readonly int IdKaleido = Shader.PropertyToID("_TripKaleido");
 
         void Start()
         {
@@ -91,14 +91,12 @@ namespace Eschropita.Overhaul
             _vignette = _profile.Add<Vignette>(false);
             _white = _profile.Add<WhiteBalance>(false);
             _split = _profile.Add<SplitToning>(false);
-            _panini = _profile.Add<PaniniProjection>(false);
-            _mixer = _profile.Add<ChannelMixer>(false);
 
             _vignette.mode.Override(VignetteMode.Procedural);
             _vignette.rounded.Override(true);
-            _vignette.smoothness.Override(0.62f);
-            _bloom.threshold.Override(0.85f);
-            _panini.cropToFit.Override(1f);
+            _vignette.smoothness.Override(0.55f);
+            _bloom.threshold.Override(0.9f);
+            _bloom.scatter.Override(0.7f);
         }
 
         void BuildWarpPass()
@@ -127,32 +125,34 @@ namespace Eschropita.Overhaul
 
         void LateUpdate()
         {
-            float I = TripDirector.Intensity;
+            float amb = TripDirector.Intensity;          // already low by design
+            float hit = TripDirector.HitPulse;
+            float miss = TripDirector.MissPulse;
             float t = TripDirector.Clock;
-            float pulse = TripDirector.Pulse;
-            bool song = TripDirector.SongActive;
-            bool grove = TripDirector.InGrove;
             Color tint = TripDirector.Tint;
+            // ease the flashes so they rise sharply and settle softly
+            float h = hit * hit * (3f - 2f * hit);
+            float m = miss * miss * (3f - 2f * miss);
+            float a = Mathf.Clamp01(amb * 0.6f);          // the ambient look never goes past a gentle wash
 
             if (_volume != null)
             {
-                _volume.weight = I <= 0.001f ? 0f : Mathf.Pow(I, 0.8f);
-                if (_volume.weight > 0f) Animate(I, t, pulse, song, grove, tint);
+                _volume.weight = Mathf.Clamp01(Mathf.Max(a, Mathf.Max(h, m)));
+                if (_volume.weight > 0.001f) Animate(a, h, m, t, tint);
             }
 
             if (_passVolume != null && _warp != null)
             {
-                bool on = I > 0.02f;
+                bool on = amb > 0.02f || hit > 0.01f || miss > 0.01f;
                 if (_passVolume.enabled != on) _passVolume.enabled = on;
                 if (on)
                 {
-                    _warp.SetFloat(IdIntensity, I);
+                    _warp.SetFloat(IdIntensity, amb);
                     _warp.SetFloat(IdTime, t);
-                    _warp.SetFloat(IdPulse, pulse);
+                    _warp.SetFloat(IdHit, hit);
+                    _warp.SetFloat(IdHitAge, TripDirector.HitAge);
+                    _warp.SetFloat(IdMiss, miss);
                     _warp.SetColor(IdTint, tint);
-                    float drift = song ? 0.25f * Mathf.Sin(t * 0.4f) : (grove ? 1.4f : 0.6f) * Mathf.Sin(t * 0.17f);
-                    _warp.SetFloat(IdHue, drift * I);
-                    _warp.SetFloat(IdKaleido, grove ? Mathf.Clamp01((I - 0.55f) / 0.45f) : 0f);
                     var cam = Camera.main;
                     Vector2 c = new Vector2(0.5f, 0.5f);
                     if (cam != null)
@@ -165,62 +165,56 @@ namespace Eschropita.Overhaul
             }
         }
 
-        void Animate(float I, float t, float pulse, bool song, bool grove, Color tint)
+        /// <summary>
+        /// Every override is a weighted mix of the three looks (weights a, h, m); the volume weight sets how far
+        /// the frame moves from the scene's own grade toward that mix.
+        /// </summary>
+        void Animate(float a, float h, float m, float t, Color tint)
         {
-            float deep = Mathf.Clamp01((I - 0.5f) / 0.5f);     // 0 for the mild level, rising to 1 in the grove
-            float hueAmp = song ? 18f : Mathf.Lerp(55f, 170f, deep);
-            _color.hueShift.Override(hueAmp * Mathf.Sin(t * 0.13f) + (song ? 0f : 25f * Mathf.Sin(t * 0.41f)));
-            _color.saturation.Override(38f + 22f * deep + 12f * Mathf.Sin(t * 0.7f) + 20f * pulse);
-            _color.contrast.Override(10f + 10f * deep);
-            _color.postExposure.Override(0.12f * Mathf.Sin(t * 0.9f) + 0.25f * pulse);
-            _color.colorFilter.Override(Color.Lerp(Color.white, tint, 0.18f + 0.12f * deep));
+            float sum = Mathf.Max(1e-4f, a + h + m);
+            float A = a / sum, H = h / sum, M = m / sum;
+            float jitter = Mathf.Sin(t * 37f) * 0.6f + Mathf.Sin(t * 53f + 1.3f) * 0.4f;   // fast, irregular (miss only)
+            Color warm = Color.Lerp(new Color(1f, 0.86f, 0.62f), tint, 0.45f);
 
-            _chroma.intensity.Override(Mathf.Clamp01(0.25f + 0.3f * (0.5f + 0.5f * Mathf.Sin(t * 1.3f)) + 0.35f * deep + 0.35f * pulse));
+            _color.hueShift.Override(A * 10f * Mathf.Sin(t * 0.13f) + M * 14f * jitter);
+            _color.saturation.Override(A * 16f + H * 32f - M * 45f);
+            _color.contrast.Override(A * 3f + H * 6f + M * 26f);
+            _color.postExposure.Override(H * 0.32f - M * 0.22f);
+            _color.colorFilter.Override(Color.white * A + Color.Lerp(Color.white, warm, 0.35f) * H + new Color(0.82f, 0.86f, 1f) * M);
 
-            _lens.intensity.Override(Mathf.Clamp(0.22f * Mathf.Sin(t * 0.6f) + 0.18f * deep * Mathf.Sin(t * 0.23f) - 0.18f * pulse, -0.6f, 0.6f));
-            _lens.xMultiplier.Override(0.65f + 0.35f * Mathf.Sin(t * 0.27f));
-            _lens.yMultiplier.Override(0.65f + 0.35f * Mathf.Cos(t * 0.33f));
-            _lens.center.Override(new Vector2(0.5f + 0.05f * Mathf.Sin(t * 0.21f), 0.5f + 0.05f * Mathf.Cos(t * 0.17f)));
-            _lens.scale.Override(0.96f);
+            _chroma.intensity.Override(Mathf.Clamp01(A * 0.08f + H * 0.12f + M * 0.9f));
 
-            Color rainbow = Color.HSVToRGB(Mathf.Repeat(t * 0.05f, 1f), 0.6f, 1f);
-            _bloom.intensity.Override(Mathf.Clamp01(0.28f + 0.22f * deep + 0.3f * pulse));
-            _bloom.scatter.Override(0.78f);
-            _bloom.tint.Override(Color.Lerp(rainbow, tint, 0.4f));
+            _lens.intensity.Override(H * 0.16f - M * (0.24f + 0.06f * jitter));
+            _lens.xMultiplier.Override(1f);
+            _lens.yMultiplier.Override(1f);
+            _lens.center.Override(new Vector2(0.5f + M * 0.02f * jitter, 0.5f));
+            _lens.scale.Override(1f - H * 0.04f);
 
-            Color vigCol = Color.HSVToRGB(Mathf.Repeat(t * 0.05f + 0.5f, 1f), 0.75f, 0.35f);
-            _vignette.color.Override(vigCol);
-            _vignette.intensity.Override(Mathf.Clamp01(0.28f + 0.12f * Mathf.Sin(t * 0.9f) + 0.12f * deep + 0.1f * pulse));
-            _vignette.center.Override(new Vector2(0.5f + 0.03f * Mathf.Sin(t * 0.3f), 0.5f + 0.03f * Mathf.Cos(t * 0.26f)));
+            _bloom.intensity.Override(Mathf.Clamp01(A * 0.18f + H * 0.65f + M * 0.12f));
+            _bloom.tint.Override(Color.white * A + warm * H + new Color(0.7f, 0.8f, 1f) * M);
 
-            _white.temperature.Override(28f * Mathf.Sin(t * 0.19f));
-            _white.tint.Override(32f * Mathf.Sin(t * 0.23f + 1.3f));
+            _vignette.color.Override(Color.black * A + new Color(0.35f, 0.22f, 0.05f) * H + new Color(0.22f, 0.02f, 0.3f) * M);
+            _vignette.intensity.Override(Mathf.Clamp01(A * 0.12f + H * 0.1f + M * 0.45f));
+            _vignette.center.Override(new Vector2(0.5f, 0.5f));
 
-            float h = Mathf.Repeat(t * 0.04f, 1f);
-            _split.shadows.Override(Color.HSVToRGB(h, 0.6f, 0.45f));
-            _split.highlights.Override(Color.HSVToRGB(Mathf.Repeat(h + 0.5f, 1f), 0.5f, 0.65f));
-            _split.balance.Override(25f * Mathf.Sin(t * 0.4f));
+            _white.temperature.Override(A * 6f * Mathf.Sin(t * 0.19f) + H * 14f - M * 32f);
+            _white.tint.Override(A * 6f * Mathf.Sin(t * 0.23f + 1.3f) + M * 22f);
 
-            _panini.distance.Override(0.22f + 0.22f * deep * (0.5f + 0.5f * Mathf.Sin(t * 0.15f)));
-
-            // Deep in the grove the colour channels slowly bleed into each other.
-            float k = song ? 0f : deep * (0.5f + 0.5f * Mathf.Sin(t * 0.11f)) * 35f;
-            _mixer.redOutRedIn.Override(100f - k);
-            _mixer.redOutGreenIn.Override(k);
-            _mixer.greenOutGreenIn.Override(100f - k);
-            _mixer.greenOutBlueIn.Override(k);
-            _mixer.blueOutBlueIn.Override(100f - k);
-            _mixer.blueOutRedIn.Override(k);
+            Color neutral = new Color(0.5f, 0.5f, 0.5f);   // grey = no toning
+            _split.shadows.Override(neutral * (A + H) + new Color(0.62f, 0.25f, 0.7f) * M);
+            _split.highlights.Override(neutral * A + Color.Lerp(neutral, new Color(0.75f, 0.62f, 0.4f), 0.6f) * H + new Color(0.3f, 0.75f, 0.78f) * M);
+            _split.balance.Override(0f);
         }
 
+        // A wrong note shakes the camera a little (a short, decaying roll); nothing else moves the camera.
         void OnCameraUpdated(CinemachineBrain brain)
         {
-            float I = TripDirector.Intensity;
-            if (brain == null || I <= 0.001f) return;
+            float miss = TripDirector.MissPulse;
+            if (brain == null || miss <= 0.001f) return;
             var cam = brain.OutputCamera;
             if (cam == null) return;
-            float t = TripDirector.Clock;
-            float roll = maxRollDegrees * I * (Mathf.Sin(t * 0.37f) * 0.7f + Mathf.Sin(t * 0.61f + 1.7f) * 0.3f);
+            float t = Time.unscaledTime;
+            float roll = missShakeDegrees * miss * miss * (Mathf.Sin(t * 41f) * 0.7f + Mathf.Sin(t * 67f + 2f) * 0.3f);
             cam.transform.rotation = cam.transform.rotation * Quaternion.AngleAxis(roll, Vector3.forward);
         }
     }

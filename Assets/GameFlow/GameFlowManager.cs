@@ -11,7 +11,8 @@ using UnityEngine.Video;
 ///
 /// Intro video → scan tutorial → a Mycari arrives and shows the melody → the player repeats it
 /// → the Mycari repairs the windmill → a tornado appears (and leaves) → a tornado hits the windmill
-/// → SANDBOX (keep the windmill running, life support, recruit/command Mycari)
+/// → SANDBOX (keep the windmill running, life support; ask a Mycari, win it over with its song at the grove
+///   (MycariPersuasion), then command it)
 /// → obelisk shield → shards → windmill shield → obelisk core → bunker → final reports → outro video.
 ///
 /// Every scene reference is auto-resolved when left empty, and every optional system is null-safe,
@@ -201,6 +202,19 @@ public class GameFlowManager : MonoBehaviour
     public bool SandboxUnlocked => Phase >= GamePhase.Sandbox;
     public string CurrentObjective { get; private set; } = "";
 
+    string _flowObjective = "";
+    string _objectiveOverride;
+
+    /// <summary>
+    /// Shows a temporary objective over the flow's own (a Mycari waiting at the grove, its song); null puts the
+    /// flow's objective back, including any change the flow made in the meantime.
+    /// </summary>
+    public void OverrideObjective(string text)
+    {
+        _objectiveOverride = string.IsNullOrEmpty(text) ? null : text;
+        ShowObjective(_objectiveOverride ?? _flowObjective);
+    }
+
     // ---------------- flags set by events / notifications ----------------
 
     bool _mushroomEntered;
@@ -286,6 +300,9 @@ public class GameFlowManager : MonoBehaviour
 
         if (!checkpoints) checkpoints = CheckpointManager.Instance ? CheckpointManager.Instance : FindAnyObjectByType<CheckpointManager>();
         if (!checkpoints) checkpoints = gameObject.AddComponent<CheckpointManager>();
+
+        // Idle until the sandbox opens; from then on a Mycari has to hear your song before it takes orders.
+        if (!MycariPersuasion.Instance) gameObject.AddComponent<MycariPersuasion>();
 
         if (!obelisk) obelisk = FindAnyObjectByType<Obelisk>();
         if (!obelisk) obelisk = CreateDummyObelisk();
@@ -535,6 +552,7 @@ public class GameFlowManager : MonoBehaviour
     void EnsureSandboxSystems()
     {
         MycariObey = true;
+        if (!MycariPersuasion.Instance) gameObject.AddComponent<MycariPersuasion>();
         if (npcManager && npcManager.All.Count <= 1)
             npcManager.SpawnByRoles(npcManager.workerCount, npcManager.attackerCount, npcManager.wandererCount);
         if (lifeSupport) lifeSupport.active = true;
@@ -653,6 +671,7 @@ public class GameFlowManager : MonoBehaviour
     IEnumerator PhaseMycariRepairs()
     {
         MycariObey = true;
+        if (_tutorialMycari && MycariPersuasion.Instance) MycariPersuasion.Instance.Remember(_tutorialMycari);
         if (!windmill) yield break;
 
         // Make sure there is visibly something to fix.
@@ -725,7 +744,7 @@ public class GameFlowManager : MonoBehaviour
         if (lifeSupport && lifeSupport.Value01 < lifeSupportFloorOnRestore) lifeSupport.Set(lifeSupport.max * lifeSupportFloorOnRestore);
         if (checkpoints) checkpoints.Save("Sandbox");
 
-        Objective("Keep the windmill running: scan (V), recruit a Fixer (E), order a repair");
+        Objective("Keep the windmill running: ask a Fixer (E), sing with it at the grove, order a repair");
         _sandboxStartTime = Time.time;
         _obeliskScanned = false;
 
@@ -924,6 +943,12 @@ public class GameFlowManager : MonoBehaviour
     }
 
     void Objective(string text)
+    {
+        _flowObjective = text ?? "";
+        if (_objectiveOverride == null) ShowObjective(_flowObjective);
+    }
+
+    void ShowObjective(string text)
     {
         CurrentObjective = text ?? "";
         if (hud) hud.SetObjective(CurrentObjective);

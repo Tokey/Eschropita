@@ -7,18 +7,21 @@ namespace Eschropita.Overhaul
     ///  - "wow": a slowly swaying delay that makes every pitch float a couple of percent sharp and flat
     ///  - chorus / flanger: short swept delays per ear with feedback that deepens in the grove
     ///  - slow auto-pan
-    /// Wet amount and depth come from the main thread (<see cref="SetIntensity"/>) and are smoothed per sample on
-    /// the audio thread. At zero intensity the audio passes through untouched.
+    ///  - "sour": a fast, wide vibrato (about a semitone) that makes everything sound off-key for a moment, used
+    ///    for a wrong mushroom
+    /// Wet amount and depth come from the main thread (<see cref="SetIntensity"/>, <see cref="SetSour"/>) and are
+    /// smoothed per sample on the audio thread. At zero intensity the audio passes through untouched.
     /// </summary>
     public class TripAudioFilter : MonoBehaviour
     {
         volatile float _targetWet;
         volatile float _targetDeep;
+        volatile float _targetSour;
 
-        float _wet, _deep;
+        float _wet, _deep, _sour;
         float[] _bufL, _bufR;
         int _mask, _w;
-        double _phWow, _phCh, _phPan, _phWow2;
+        double _phWow, _phCh, _phPan, _phWow2, _phSour;
         float _sr = 48000f;
         float _fbL, _fbR;
 
@@ -28,6 +31,9 @@ namespace Eschropita.Overhaul
             _targetWet = Mathf.Clamp01(wet);
             _targetDeep = Mathf.Clamp01(deep);
         }
+
+        /// <summary>0..1 off-key vibrato (a wrong note). Also needs some wet (see <see cref="SetIntensity"/>).</summary>
+        public void SetSour(float sour) => _targetSour = Mathf.Clamp01(sour);
 
         void Awake()
         {
@@ -71,11 +77,14 @@ namespace Eschropita.Overhaul
             float smooth = 1f / (0.08f * _sr);
             double twoPi = 2.0 * System.Math.PI;
             double incWow = twoPi * 0.47 / _sr, incWow2 = twoPi * 0.131 / _sr, incCh = twoPi * 0.23 / _sr, incPan = twoPi * 0.11 / _sr;
+            double incSour = twoPi * 6.3 / _sr;
+            float targetSour = _targetSour;
             int frames = data.Length / channels;
             for (int i = 0; i < frames; i++)
             {
                 _wet += (targetWet - _wet) * smooth;
                 _deep += (targetDeep - _deep) * smooth;
+                _sour += (targetSour - _sour) * smooth;
                 int idx = i * channels;
                 float inL = data[idx];
                 float inR = channels > 1 ? data[idx + 1] : inL;
@@ -85,7 +94,8 @@ namespace Eschropita.Overhaul
                 _bufR[_w] = inR + _fbR * fb;
 
                 float wowA = (float)System.Math.Sin(_phWow), wowB = (float)System.Math.Sin(_phWow2);
-                float d1 = (0.013f + (0.006f + 0.004f * _deep) * (0.75f * wowA + 0.25f * wowB)) * _sr;
+                float d1 = (0.013f + (0.006f + 0.004f * _deep) * (0.75f * wowA + 0.25f * wowB)
+                            + 0.0015f * _sour * (float)System.Math.Sin(_phSour)) * _sr;
                 float chA = (float)System.Math.Sin(_phCh), chB = (float)System.Math.Sin(_phCh + 1.5707963);
                 float d2L = (0.0045f + 0.0032f * chA) * _sr;
                 float d2R = (0.0045f + 0.0032f * chB) * _sr;
@@ -107,12 +117,13 @@ namespace Eschropita.Overhaul
                 if (channels > 1) data[idx + 1] = outR;
 
                 _w = (_w + 1) & _mask;
-                _phWow += incWow; _phWow2 += incWow2; _phCh += incCh; _phPan += incPan;
+                _phWow += incWow; _phWow2 += incWow2; _phCh += incCh; _phPan += incPan; _phSour += incSour;
             }
             if (_phWow > twoPi) _phWow -= twoPi;
             if (_phWow2 > twoPi) _phWow2 -= twoPi;
             if (_phCh > twoPi) _phCh -= twoPi;
             if (_phPan > twoPi) _phPan -= twoPi;
+            if (_phSour > twoPi) _phSour -= twoPi;
         }
     }
 }
