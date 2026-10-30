@@ -1,0 +1,1435 @@
+{
+ "version": 1,
+ "cues": [
+  {
+   "id": "amb.bunker",
+   "files": [
+    "amb/bunker"
+   ],
+   "bus": "amb",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth room tone + drips",
+   "notes": "damp underground room"
+  },
+  {
+   "id": "amb.grove",
+   "files": [
+    "amb/grove"
+   ],
+   "bus": "amb",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 4,
+   "maxDistance": 30,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 011 10-52 (low-passed, long reverb)",
+   "notes": "soft fungal drone around the grove (3D)"
+  },
+  {
+   "id": "amb.lifesupport",
+   "files": [
+    "amb/lifesupport"
+   ],
+   "bus": "amb",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3,
+   "maxDistance": 24,
+   "key": "",
+   "bpm": 0,
+   "source": "synth hum + pump rhythm, Distant Layer Delay Mids 40-48 (low-passed)",
+   "notes": "machinery near the life-support plant (3D)"
+  },
+  {
+   "id": "amb.obelisk",
+   "files": [
+    "amb/obelisk"
+   ],
+   "bus": "amb",
+   "volume": 0.45,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 4,
+   "maxDistance": 30,
+   "key": "",
+   "bpm": 0,
+   "source": "Space Distanc Layer Delay HiLo 115-139 (high-passed) + synth 50 Hz buzz",
+   "notes": "electrical air around the obelisk (3D)"
+  },
+  {
+   "id": "amb.storm",
+   "files": [
+    "amb/storm"
+   ],
+   "bus": "amb",
+   "volume": 0.6,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "EzTornado windloop.wav + Tornado Delay Noise 20-40 (low-passed)",
+   "notes": "heavy dust-storm wind"
+  },
+  {
+   "id": "amb.trip",
+   "files": [
+    "amb/trip"
+   ],
+   "bus": "amb",
+   "volume": 0.6,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 010 19.5-35.5 + 56-72 (glide textures, 1.6x slower, long reverb)",
+   "notes": "shimmering spore-trip pad that rises near Mycari and in the grove"
+  },
+  {
+   "id": "amb.turbine",
+   "files": [
+    "amb/turbine"
+   ],
+   "bus": "amb",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 4,
+   "maxDistance": 34,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (band-passed noise, blade-pass rhythm)",
+   "notes": "rotor whoosh; the director pitches it with rotor speed"
+  },
+  {
+   "id": "amb.wind",
+   "files": [
+    "amb/wind"
+   ],
+   "bus": "amb",
+   "volume": 0.45,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mars Landscape 3D Wind.wav (project)",
+   "notes": "constant thin Mars wind"
+  },
+  {
+   "id": "music.bunker",
+   "files": [
+    "music/bunker"
+   ],
+   "bus": "music",
+   "volume": 0.75,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 005",
+   "notes": "the \"something new\" the Mycari play at the bunker"
+  },
+  {
+   "id": "music.explore",
+   "files": [
+    "music/explore"
+   ],
+   "bus": "music",
+   "volume": 0.8,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "F major",
+   "bpm": 0,
+   "source": "Mushroom Game Layered (whole piece)",
+   "notes": "main exploration theme, ~129 BPM, F major"
+  },
+  {
+   "id": "music.grove.1",
+   "files": [
+    "music/grove_1"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 015",
+   "notes": "grove playlist (F major, F/Dm fit 0.86)"
+  },
+  {
+   "id": "music.grove.2",
+   "files": [
+    "music/grove_2"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 006",
+   "notes": "grove playlist (D minor, F/Dm fit 0.85)"
+  },
+  {
+   "id": "music.grove.3",
+   "files": [
+    "music/grove_3"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 017",
+   "notes": "grove playlist (D minor, F/Dm fit 0.85)"
+  },
+  {
+   "id": "music.grove.4",
+   "files": [
+    "music/grove_4"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 001",
+   "notes": "grove playlist (F major, F/Dm fit 0.8)"
+  },
+  {
+   "id": "music.grove.5",
+   "files": [
+    "music/grove_5"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 004",
+   "notes": "grove playlist (F major, F/Dm fit 0.8)"
+  },
+  {
+   "id": "music.grove.6",
+   "files": [
+    "music/grove_6"
+   ],
+   "bus": "music",
+   "volume": 0.7,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 012",
+   "notes": "grove playlist (C major, F/Dm fit 0.74)"
+  },
+  {
+   "id": "music.layer.calm",
+   "files": [
+    "music/layer_calm"
+   ],
+   "bus": "music",
+   "volume": 0.45,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Distant Layer Delay Mids 0-150",
+   "notes": "low drone pad under exploration in quiet moments"
+  },
+  {
+   "id": "music.layer.space",
+   "files": [
+    "music/layer_space"
+   ],
+   "bus": "music",
+   "volume": 0.55,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Space Distanc Layer Delay HiLo 3.75-142",
+   "notes": "eerie bed for the surveillance obelisk"
+  },
+  {
+   "id": "music.layer.tension",
+   "files": [
+    "music/layer_tension"
+   ],
+   "bus": "music",
+   "volume": 0.6,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Sub Layer Delay Bass 50-230",
+   "notes": "pulsing bass that creeps in with danger (storm, low life support)"
+  },
+  {
+   "id": "music.layer.wobble",
+   "files": [
+    "music/layer_wobble"
+   ],
+   "bus": "music",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Space Wobble Distanc Layer Delay HiLo",
+   "notes": "unstable pulsing layer for the jammer / obelisk core"
+  },
+  {
+   "id": "music.layer.wonder",
+   "files": [
+    "music/layer_wonder"
+   ],
+   "bus": "music",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Sub Layer On High Notes 0.85-160",
+   "notes": "shimmering high chord bed for discovery, bunker, lore (played on its own)"
+  },
+  {
+   "id": "music.report",
+   "files": [
+    "music/report"
+   ],
+   "bus": "music",
+   "volume": 0.75,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "F major",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 016",
+   "notes": "warm F major closing loop for the report card and ending"
+  },
+  {
+   "id": "music.storm",
+   "files": [
+    "music/storm"
+   ],
+   "bus": "music",
+   "volume": 0.55,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Tornado Delay Noise",
+   "notes": "storm bed while a tornado is active"
+  },
+  {
+   "id": "music.thought",
+   "files": [
+    "music/thought"
+   ],
+   "bus": "music",
+   "volume": 0.5,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Subtle Delay Noise Thought",
+   "notes": "introspective bed for reading logs and the bunker"
+  },
+  {
+   "id": "phrase.breaker",
+   "files": [
+    "phrase/breaker_1",
+    "phrase/breaker_2",
+    "phrase/breaker_3"
+   ],
+   "bus": "phrase",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.4,
+   "minDistance": 3,
+   "maxDistance": 30,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 26.23-27.75; Loop 005 13.13-14.65; Loop 001 10.98-12.90",
+   "notes": "low, punchy \u2014 a red Breaker answers"
+  },
+  {
+   "id": "phrase.fixer",
+   "files": [
+    "phrase/fixer_1",
+    "phrase/fixer_2",
+    "phrase/fixer_3"
+   ],
+   "bus": "phrase",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.4,
+   "minDistance": 3,
+   "maxDistance": 30,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 002 31.83-33.35; Loop 001 57.68-58.95; Loop 017 53.03-54.30",
+   "notes": "bright, rising \u2014 a blue Fixer answers"
+  },
+  {
+   "id": "phrase.wanderer",
+   "files": [
+    "phrase/wanderer_1",
+    "phrase/wanderer_2",
+    "phrase/wanderer_3"
+   ],
+   "bus": "phrase",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.4,
+   "minDistance": 3,
+   "maxDistance": 30,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 35.33-36.60; Loop 002 14.13-15.40; Loop 005 54.48-55.95",
+   "notes": "sparse, floaty \u2014 a green Wanderer answers"
+  },
+  {
+   "id": "sfx.attune",
+   "files": [
+    "sfx/attune"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) reversed -> F5, then C6",
+   "notes": "spore attunement: a Mycari reveals its role"
+  },
+  {
+   "id": "sfx.command.dismantle",
+   "files": [
+    "sfx/command_dismantle"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> D4 + synth thump",
+   "notes": "dismantle command confirmed"
+  },
+  {
+   "id": "sfx.command.repair",
+   "files": [
+    "sfx/command_repair"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> C5, G5",
+   "notes": "repair command confirmed"
+  },
+  {
+   "id": "sfx.daffodil.boot",
+   "files": [
+    "sfx/daffodil_boot"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth rising sweep + Loop 016 @70.30s (F6) -> C5 F5 A5 C6",
+   "notes": "Daffodil boots up"
+  },
+  {
+   "id": "sfx.daffodil.shutdown",
+   "files": [
+    "sfx/daffodil_shutdown"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (tremolo power-down + click)",
+   "notes": "Daffodil shuts down"
+  },
+  {
+   "id": "sfx.decline",
+   "files": [
+    "sfx/decline"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> A4, F4",
+   "notes": "a Mycari declines"
+  },
+  {
+   "id": "sfx.dismiss",
+   "files": [
+    "sfx/dismiss"
+   ],
+   "bus": "sfx",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> C4",
+   "notes": "follower dismissed"
+  },
+  {
+   "id": "sfx.door",
+   "files": [
+    "sfx/door"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 4,
+   "maxDistance": 35,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (clunk + airlock hiss)",
+   "notes": "dome door / airlock"
+  },
+  {
+   "id": "sfx.footstep",
+   "files": [
+    "sfx/footstep_1",
+    "sfx/footstep_2",
+    "sfx/footstep_3",
+    "sfx/footstep_4",
+    "sfx/footstep_5",
+    "sfx/footstep_6"
+   ],
+   "bus": "sfx",
+   "volume": 0.32,
+   "loop": false,
+   "pitchJitter": 0.08,
+   "maxVoices": 2,
+   "minInterval": 0.12,
+   "minDistance": 2,
+   "maxDistance": 18,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (filtered noise crunch + grain clicks + thump)",
+   "notes": "soft regolith footsteps"
+  },
+  {
+   "id": "sfx.hit",
+   "files": [
+    "sfx/hit_1",
+    "sfx/hit_2",
+    "sfx/hit_3"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.05,
+   "maxVoices": 3,
+   "minInterval": 0.08,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (thud + metallic partials + crack)",
+   "notes": "Breaker strikes a structure"
+  },
+  {
+   "id": "sfx.interact",
+   "files": [
+    "sfx/interact"
+   ],
+   "bus": "sfx",
+   "volume": 0.45,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) (60 ms) + noise tick",
+   "notes": "generic interact"
+  },
+  {
+   "id": "sfx.lore.close",
+   "files": [
+    "sfx/lore_close"
+   ],
+   "bus": "sfx",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> C6, F5",
+   "notes": "log terminal closes"
+  },
+  {
+   "id": "sfx.lore.open",
+   "files": [
+    "sfx/lore_open"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> F5 C6 F6",
+   "notes": "log terminal opens"
+  },
+  {
+   "id": "sfx.ls.alarm",
+   "files": [
+    "sfx/ls_alarm"
+   ],
+   "bus": "sfx",
+   "volume": 0.45,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> A4/F4 alternating",
+   "notes": "soft pulsing life-support alarm (loop)"
+  },
+  {
+   "id": "sfx.ls.restored",
+   "files": [
+    "sfx/ls_restored"
+   ],
+   "bus": "sfx",
+   "volume": 0.65,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> F4 A4 C5 F5",
+   "notes": "life support stabilised"
+  },
+  {
+   "id": "sfx.mycari.leave",
+   "files": [
+    "sfx/mycari_leave"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 4,
+   "maxDistance": 40,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) reversed -> C6, then F6 (+ long reverb)",
+   "notes": "a Mycari leaves through the dome door"
+  },
+  {
+   "id": "sfx.pad.ripple",
+   "files": [
+    "sfx/pad_ripple"
+   ],
+   "bus": "sfx",
+   "volume": 0.35,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3,
+   "maxDistance": 22,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) reversed -> F3 (low-passed)",
+   "notes": "soft ground swell under a mushroom note"
+  },
+  {
+   "id": "sfx.recruit",
+   "files": [
+    "sfx/recruit"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> F5 A5 C6",
+   "notes": "a Mycari agrees to follow"
+  },
+  {
+   "id": "sfx.repair.loop",
+   "files": [
+    "sfx/repair_loop"
+   ],
+   "bus": "sfx",
+   "volume": 0.35,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3,
+   "maxDistance": 26,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 007 46-52 (band-passed, reverb, looped)",
+   "notes": "fungal \"knitting\" while Fixers repair (3D loop)"
+  },
+  {
+   "id": "sfx.repair.tick",
+   "files": [
+    "sfx/repair_tick_1",
+    "sfx/repair_tick_2",
+    "sfx/repair_tick_3"
+   ],
+   "bus": "sfx",
+   "volume": 0.35,
+   "loop": false,
+   "pitchJitter": 0.03,
+   "maxVoices": 3,
+   "minInterval": 0.08,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> A5 C6 F6",
+   "notes": "sparkles while repair progresses"
+  },
+  {
+   "id": "sfx.scan.loop",
+   "files": [
+    "sfx/scan_loop"
+   ],
+   "bus": "sfx",
+   "volume": 0.3,
+   "loop": true,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (radar ping, 1 s)",
+   "notes": "scanner active (loop)"
+  },
+  {
+   "id": "sfx.scan.start",
+   "files": [
+    "sfx/scan_start"
+   ],
+   "bus": "sfx",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (rising sweep)",
+   "notes": "scanner on"
+  },
+  {
+   "id": "sfx.scan.stop",
+   "files": [
+    "sfx/scan_stop"
+   ],
+   "bus": "sfx",
+   "volume": 0.45,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (falling sweep)",
+   "notes": "scanner off"
+  },
+  {
+   "id": "sfx.shard.pickup",
+   "files": [
+    "sfx/shard_pickup_1",
+    "sfx/shard_pickup_2",
+    "sfx/shard_pickup_3"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 3,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> F5 A5 C6",
+   "notes": "crystalline chime; the director climbs the triad on consecutive pickups"
+  },
+  {
+   "id": "sfx.shield.break",
+   "files": [
+    "sfx/shield_break"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (glass tinkles + noise burst)",
+   "notes": "shield shatters"
+  },
+  {
+   "id": "sfx.shield.build",
+   "files": [
+    "sfx/shield_build"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) cascade (C6 F6 A5 D6)",
+   "notes": "shield plates clip on"
+  },
+  {
+   "id": "sfx.site.down",
+   "files": [
+    "sfx/site_down"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 5,
+   "maxDistance": 45,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (falling whine + clunk + crackle)",
+   "notes": "power failure"
+  },
+  {
+   "id": "sfx.spores",
+   "files": [
+    "sfx/spores"
+   ],
+   "bus": "sfx",
+   "volume": 0.45,
+   "loop": false,
+   "pitchJitter": 0.08,
+   "maxVoices": 3,
+   "minInterval": 0.1,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "synth puff + Loop 016 @70.30s (F6) -> F6",
+   "notes": "airy spore puff"
+  },
+  {
+   "id": "sfx.tornado.gust",
+   "files": [
+    "sfx/tornado_gust_1",
+    "sfx/tornado_gust_2",
+    "sfx/tornado_gust_3"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.5,
+   "minDistance": 6,
+   "maxDistance": 50,
+   "key": "",
+   "bpm": 0,
+   "source": "Tornado Delay Noise 10-12.8, 45-48, 78-80.6 (band-passed, swelled)",
+   "notes": "wind gusts near a tornado"
+  },
+  {
+   "id": "sfx.tornado.hit",
+   "files": [
+    "sfx/tornado_hit"
+   ],
+   "bus": "sfx",
+   "volume": 0.8,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 6,
+   "maxDistance": 55,
+   "key": "",
+   "bpm": 0,
+   "source": "synth boom + debris + Tornado Delay Noise 30-32",
+   "notes": "tornado strikes a structure"
+  },
+  {
+   "id": "sfx.turbine.spinup",
+   "files": [
+    "sfx/turbine_spinup"
+   ],
+   "bus": "sfx",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 5,
+   "maxDistance": 45,
+   "key": "",
+   "bpm": 0,
+   "source": "synth sweep + Loop 001 @35.35s (B5) -> F5",
+   "notes": "turbine spinning back up"
+  },
+  {
+   "id": "stinger.danger",
+   "files": [
+    "stinger/danger"
+   ],
+   "bus": "stinger",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Tornado Delay Noise 0-5 + Sub Layer Delay Bass 60-65 (low-passed)",
+   "notes": "storm forming / life support low"
+  },
+  {
+   "id": "stinger.discovery",
+   "files": [
+    "stinger/discovery"
+   ],
+   "bus": "stinger",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Sub Layer On High Notes 0.85-7.5",
+   "notes": "something new found (lore log, bunker, obelisk)"
+  },
+  {
+   "id": "stinger.ending",
+   "files": [
+    "stinger/ending"
+   ],
+   "bus": "stinger",
+   "volume": 0.85,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 016 (last 9 s)",
+   "notes": "report card shown"
+  },
+  {
+   "id": "stinger.fail",
+   "files": [
+    "stinger/fail"
+   ],
+   "bus": "stinger",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 005 0-2.45 (low-passed)",
+   "notes": "gentle \"listen again\" after a wrong note"
+  },
+  {
+   "id": "stinger.obelisk_down",
+   "files": [
+    "stinger/obelisk_down"
+   ],
+   "bus": "stinger",
+   "volume": 0.85,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Space Wobble Distanc Layer Delay HiLo 32.5-40",
+   "notes": "the obelisk falls \u2014 release and awe"
+  },
+  {
+   "id": "stinger.paths",
+   "files": [
+    "stinger/paths"
+   ],
+   "bus": "stinger",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 011 3.0-9.5 (+ reverb)",
+   "notes": "light paths spread across the ground"
+  },
+  {
+   "id": "stinger.repaired",
+   "files": [
+    "stinger/repaired"
+   ],
+   "bus": "stinger",
+   "volume": 0.8,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 002 0-3.75 (+ reverb)",
+   "notes": "warm resolve when a site is fully repaired"
+  },
+  {
+   "id": "stinger.shield",
+   "files": [
+    "stinger/shield"
+   ],
+   "bus": "stinger",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom 4 Part Loop 008 0-3.2 (+ reverb)",
+   "notes": "shard shield clicks onto the turbine"
+  },
+  {
+   "id": "stinger.solved",
+   "files": [
+    "stinger/solved"
+   ],
+   "bus": "stinger",
+   "volume": 0.85,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Mushroom Game Layered 87.6-95.0",
+   "notes": "the theme blooming after its breakdown \u2014 the grove lights up"
+  },
+  {
+   "id": "ui.blip.daffodil",
+   "files": [
+    "ui/blip_daffodil_1",
+    "ui/blip_daffodil_2",
+    "ui/blip_daffodil_3",
+    "ui/blip_daffodil_4"
+   ],
+   "bus": "ui",
+   "volume": 0.28,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.03,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> C6 D6 F6 A6 (50 ms)",
+   "notes": "chirpy digital text blips (Daffodil)"
+  },
+  {
+   "id": "ui.blip.eschropita",
+   "files": [
+    "ui/blip_eschropita_1",
+    "ui/blip_eschropita_2",
+    "ui/blip_eschropita_3"
+   ],
+   "bus": "ui",
+   "volume": 0.28,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.03,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> F5 G5 A5 (75 ms)",
+   "notes": "warm text blips (Eschropita)"
+  },
+  {
+   "id": "ui.blip.mycari",
+   "files": [
+    "ui/blip_mycari_1",
+    "ui/blip_mycari_2",
+    "ui/blip_mycari_3"
+   ],
+   "bus": "ui",
+   "volume": 0.28,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 2,
+   "minInterval": 0.03,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> D5 F5 C5 (90 ms)",
+   "notes": "mushroom-tone text blips (Mycari / others)"
+  },
+  {
+   "id": "ui.checkpoint",
+   "files": [
+    "ui/checkpoint"
+   ],
+   "bus": "ui",
+   "volume": 0.55,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> F4 A4 C5 chord",
+   "notes": "checkpoint saved"
+  },
+  {
+   "id": "ui.click",
+   "files": [
+    "ui/click"
+   ],
+   "bus": "ui",
+   "volume": 0.55,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> C6",
+   "notes": "button press"
+  },
+  {
+   "id": "ui.close",
+   "files": [
+    "ui/close"
+   ],
+   "bus": "ui",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> G5, C5",
+   "notes": "panel closes"
+  },
+  {
+   "id": "ui.gameover",
+   "files": [
+    "ui/gameover"
+   ],
+   "bus": "ui",
+   "volume": 0.7,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> F3, C3 (+ reverb)",
+   "notes": "life support depleted / rollback"
+  },
+  {
+   "id": "ui.hover",
+   "files": [
+    "ui/hover"
+   ],
+   "bus": "ui",
+   "volume": 0.3,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> F5 (soft)",
+   "notes": "hover"
+  },
+  {
+   "id": "ui.objective",
+   "files": [
+    "ui/objective"
+   ],
+   "bus": "ui",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> C5, F5",
+   "notes": "new objective"
+  },
+  {
+   "id": "ui.open",
+   "files": [
+    "ui/open"
+   ],
+   "bus": "ui",
+   "volume": 0.55,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 016 @70.30s (F6) -> C5, G5",
+   "notes": "panel opens"
+  },
+  {
+   "id": "ui.toast",
+   "files": [
+    "ui/toast"
+   ],
+   "bus": "ui",
+   "volume": 0.5,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 4,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> A5 (+ reverb)",
+   "notes": "notification"
+  }
+ ]
+}
