@@ -6,8 +6,8 @@ namespace Eschropita.Overhaul
 {
     /// <summary>
     /// Small uGUI toolkit for the overhaul's own screens, styled like <see cref="GameHUD"/> (dark translucent rounded
-    /// panels, warm off-white TextMeshPro text, amber accent). Each overhaul screen lives on its own Screen Space
-    /// Overlay canvas so it never disturbs the game's HUD.
+    /// panels, warm off-white TextMeshPro text, amber accent) and dressed in the psychedelic type (<see cref="PsyType"/>).
+    /// Each overhaul screen lives on its own Screen Space Overlay canvas so it never disturbs the game's HUD.
     /// </summary>
     public static class OverhaulUI
     {
@@ -73,7 +73,11 @@ namespace Eschropita.Overhaul
         }
 
         public static Image PanelImage(string name, Transform parent, Color color, int radius = 14)
-            => Image(name, parent, GameHUD.RoundedSprite(radius), color, UnityEngine.UI.Image.Type.Sliced);
+        {
+            var img = Image(name, parent, GameHUD.RoundedSprite(radius), color, UnityEngine.UI.Image.Type.Sliced);
+            PsyType.StylePanel(img);   // dark backdrops only; coloured bars and fills are left as they are
+            return img;
+        }
 
         public static TextMeshProUGUI Label(string name, Transform parent, string text, float size, Color color,
                                            TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft,
@@ -90,6 +94,7 @@ namespace Eschropita.Overhaul
             tmp.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
             tmp.overflowMode = TextOverflowModes.Overflow;
             tmp.raycastTarget = false;
+            PsyType.Style(tmp, PsyType.Guess(tmp, text));
             return tmp;
         }
 

@@ -67,7 +67,7 @@ namespace Eschropita.Overhaul
             _pct = OverhaulUI.Label("Pct", dial, "100", 30f, OverhaulUI.Text, TextAlignmentOptions.Center, FontWeight.Bold);
             OverhaulUI.Stretch(_pct.rectTransform);
             _pct.rectTransform.anchoredPosition = new Vector2(0f, 4f);
-            var unit = OverhaulUI.Label("Unit", dial, "O₂ %", 11f, OverhaulUI.Dim, TextAlignmentOptions.Center, FontWeight.Medium, false, 2f);
+            var unit = OverhaulUI.Label("Unit", dial, "O<sub>2</sub> %", 11f, OverhaulUI.Dim, TextAlignmentOptions.Center, FontWeight.Medium, false, 2f);
             OverhaulUI.Place(unit.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -22f), new Vector2(80f, 16f));
 
             _label = OverhaulUI.Label("Label", _root, "LIFE SUPPORT", 13f, OverhaulUI.Dim, TextAlignmentOptions.TopLeft, FontWeight.SemiBold, true, 2f);

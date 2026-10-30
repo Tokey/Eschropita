@@ -90,7 +90,7 @@ namespace Eschropita.Overhaul
                 if (emergency && !_emergency)
                 {
                     var hud = GameHUD.Instance;
-                    if (hud != null) hud.Toast("Emergency O₂ reserve: drain slowed", 3f);
+                    if (hud != null) hud.Toast("Emergency O<sub>2</sub> reserve: drain slowed", 3f);
                 }
                 _emergency = emergency;
             }

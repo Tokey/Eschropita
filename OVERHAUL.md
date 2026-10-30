@@ -11,19 +11,32 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 | **E** | Interact (as before) — also reads lore terminals (E / Esc to close, W/S to scroll) |
 | **F7** | Spore-trip strength: 100 % → 50 % → off (remembered) |
 | **F9** | Toggle the redesigned level dressing vs. the original visuals (before/after) |
+| **F10** | Toggle the psychedelic UI type vs. the original type (before/after) |
 
 ## What's in it
 
 - **Spore trip (psychedelic effect)** — mild when Mycari are close, intense inside the mushroom grove. Picture: hue drift,
   saturation, breathing lens distortion, chromatic fringes, rainbow bloom, a liquid warp pass with ripples from each mushroom
   note, slow camera roll. Sound: pitch "wow", chorus/flanger, reverb and low-pass on the whole mix + a shimmer pad. Mushroom
-  note colours stay readable while a song plays. Lingering patiently next to a Mycari *attunes* you to it: its role colour
+  note colours stay readable while a song plays. **Focus:** while the mushrooms sing and you answer them, the spores
+  settle (about 40 % calmer, a bit more when you stand still and listen) so the puzzle is easy to follow; solving the song
+  lets the full trip bloom back. Tune it on `TripDirector` → *Focus while doing the mushroom puzzle* (`puzzleCalm`,
+  `stillnessCalm`, `settleSeconds`, `bloomBackSeconds`). Lingering patiently next to a Mycari *attunes* you to it: its role colour
   (blue Fixer / red Breaker / green Wanderer) is revealed without Daffodil's scanner.
 - **Music & sound from Alexander's tracks** — 80 cues (see `Tools/SoundLibrary/SOUND_LIBRARY.md` for every source + time
   range). Adaptive score: exploration theme that slowly evolves, grove playlist, storm, obelisk, bunker/lore, report song,
   tension bass as life support falls, near-silence while the mushrooms sing. A sound for every interaction, Mycari answer
   in role phrases, dialogue blips per speaker. The puzzle's stock buzzer / winner jingle are replaced at runtime by in-key
   sounds cut from his material.
+- **Footsteps** — one step per foot contact of Escropita's run cycle (they keep time with her legs, storm slow-downs
+  included), a soft gravel crunch on regolith and a spongy squish on the grove's mycelium floor, alternating feet, never
+  the same take twice in a row.
+- **Psychedelic UI type** (`PsyType`) — 70s poster lettering for titles, names and grades (Shrikhand: sunset gradient,
+  ink outline, retro drop shadow, big titles sway gently) and a round, open face for everything you read (Fredoka, warm
+  cream with a thin outline and soft shadow, one size step up, faint text made more opaque); text panels turn deep
+  aubergine with a neon rim. Fonts are SIL OFL (`Assets/Overhaul/Resources/Overhaul/Fonts`, licences alongside).
+- **Intro** — the intro cut scene is *SP_ INTRO CUT SCENE_001* (1080p, 2:06, skippable as before), same file name and GUID
+  as the old `Assets/Videos/intro.mp4`, so the scene reference is unchanged.
 - **Atmosphere** — moods per act (day / grove / storm / obelisk / bunker / hope), no more white flash at start, red
   breathing overlay when life support is critical.
 - **Tactile feedback** — particles, light flashes, ground rings, beams, a glowing tether to your follower, repair streams,
@@ -52,4 +65,5 @@ This was written without a Unity editor. Every script was compile-checked agains
 uGUI 2.5 / Cinemachine 3.1 source (0 errors, editor and player builds), but nothing has been seen rendered or heard
 in-engine yet. Worth a look on first play: the look of the procedural turbine/dome/grove, the strength of the trip warp
 (`TripVisuals`, `Hidden/Eschropita/TripWarp` — it switches itself off if the shader fails), mix levels
-(`AudioDirector` bus sliders), and the balance numbers (`GameBalance` fields).
+(`AudioDirector` bus sliders), the balance numbers (`GameBalance` fields), and the UI type (`PsyType` presets; the HUD's
+text sizes were checked against GameHUD's layout on paper only).

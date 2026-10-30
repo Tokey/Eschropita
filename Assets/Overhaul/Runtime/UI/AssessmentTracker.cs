@@ -82,7 +82,7 @@ namespace Eschropita.Overhaul
             {
                 var r = _rows[i];
                 int c = counts[i];
-                if (c != r.shown) { r.shown = c; r.count.text = c >= StoryStats.TaskGoal ? "✓" : $"{c}/{StoryStats.TaskGoal}"; }
+                if (c != r.shown) { r.shown = c; r.count.text = c >= StoryStats.TaskGoal ? "done" : $"{c}/{StoryStats.TaskGoal}"; }
                 r.count.color = c >= StoryStats.TaskGoal ? r.color : OverhaulUI.Dim;
                 for (int k = 0; k < r.pips.Length; k++)
                 {
