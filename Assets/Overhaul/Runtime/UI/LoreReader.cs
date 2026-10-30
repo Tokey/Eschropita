@@ -118,7 +118,8 @@ namespace Eschropita.Overhaul
             _open = true;
             _openedAt = Time.unscaledTime;
 
-            _savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+            // never restore a hit-stop's slow motion (or a pause) when the reader closes
+            _savedTimeScale = Time.timeScale >= 0.5f ? Time.timeScale : 1f;
             Time.timeScale = 0f;
             var bridge = SignalBridge.Instance;
             var player = bridge != null ? bridge.Player : null;
