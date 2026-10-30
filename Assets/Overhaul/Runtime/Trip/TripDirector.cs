@@ -11,6 +11,8 @@ namespace Eschropita.Overhaul
     ///   - intense inside the mushroom grove, ramping up as you approach it
     /// It also runs the attunement mechanic: linger patiently (walk slowly) beside a Mycari and you perceive its
     /// true role colour without Daffodil's scanner (patience reveals; the mushroom song persuades).
+    /// Focus: while the mushrooms sing and you answer them, the spores settle (the trip eases off, a little more
+    /// when you stand still and listen) so the notes are easy to follow; solving the song lets it bloom back.
     /// F7 cycles the effect strength (100 % / 50 % / off) for comfort; the choice is remembered.
     /// </summary>
     [OverhaulModule(15)]
@@ -34,6 +36,8 @@ namespace Eschropita.Overhaul
         public static Vector3 PulseSource => Instance != null ? Instance._pulseSource : Vector3.zero;
         /// <summary>Comfort scale 0..1 chosen with F7.</summary>
         public static float UserScale => Instance != null ? Instance._userScale : 1f;
+        /// <summary>0..1 how settled the spores are while the mushroom song is on (already applied to <see cref="Intensity"/>).</summary>
+        public static float Focus => Instance != null ? Instance._focus : 0f;
 
         [Header("Mycari proximity (mild)")]
         public float mycariFullDistance = 1.8f;
@@ -47,6 +51,17 @@ namespace Eschropita.Overhaul
         public float groveApproachIntensity = 0.55f;
         public float groveApproachDistance = 7f;
 
+        [Header("Focus while doing the mushroom puzzle")]
+        [Tooltip("How much the trip settles while the mushrooms sing and you answer them (0 = unchanged, 1 = gone). " +
+                 "It blooms back to full strength when the song is solved.")]
+        [Range(0f, 1f)] public float puzzleCalm = 0.4f;
+        [Tooltip("Extra settling while you stand still: watching the demo, or at a pad on your turn.")]
+        [Range(0f, 1f)] public float stillnessCalm = 0.15f;
+        [Tooltip("Seconds for the spores to settle once the song starts (and to deepen when you stop moving).")]
+        public float settleSeconds = 1.2f;
+        [Tooltip("Seconds for the full trip to bloom back after the song is solved (or when you leave the grove).")]
+        public float bloomBackSeconds = 0.8f;
+
         [Header("Smoothing")]
         public float riseRate = 0.9f;
         public float fallRate = 0.35f;
@@ -59,7 +74,7 @@ namespace Eschropita.Overhaul
         const string PrefKey = "Eschropita.TripStrength";
         static readonly float[] Strengths = { 1f, 0.5f, 0f };
 
-        float _intensity, _raw, _pulse, _clock, _userScale = 1f;
+        float _intensity, _raw, _pulse, _clock, _userScale = 1f, _focus, _groveNear;
         bool _inGrove, _songActive;
         Color _tint = Color.white;
         Color _noteTint = OverhaulPalette.SporeCyan;
@@ -153,6 +168,7 @@ namespace Eschropita.Overhaul
             NPCFlocker nearest = null;
             float nearestD = float.MaxValue;
             _inGrove = false;
+            _groveNear = 0f;
 
             if (player != null)
             {
@@ -198,8 +214,8 @@ namespace Eschropita.Overhaul
                     Vector3 gd = trig.Center - p; gd.y = 0f;
                     float gdist = gd.magnitude;
                     _inGrove = trig.PlayerInside || gdist < _groveRadius * 0.85f;
-                    grove = _inGrove ? groveIntensity
-                          : (1f - Smooth(_groveRadius, _groveRadius + groveApproachDistance, gdist)) * groveApproachIntensity;
+                    _groveNear = _inGrove ? 1f : 1f - Smooth(_groveRadius, _groveRadius + groveApproachDistance, gdist);
+                    grove = _inGrove ? groveIntensity : _groveNear * groveApproachIntensity;
                 }
 
                 target = Mathf.Max(mild, grove);
@@ -217,11 +233,23 @@ namespace Eschropita.Overhaul
             var puzzle = bridge != null ? bridge.Puzzle : null;
             _songActive = puzzle != null && (puzzle.IsDemoRunning || puzzle.IsPlayerTurn);
 
+            // Focus: the spores settle while the mushrooms sing and you answer (more if you stand still and listen),
+            // so the notes stay easy to follow; once the song is solved the full trip blooms back.
+            bool doingPuzzle = puzzle != null && !puzzle.IsPuzzleCompleted() && (puzzle.IsPuzzleActive() || puzzle.IsDemoRunning);
+            float focusTarget = 0f;
+            if (doingPuzzle)
+            {
+                float still = 1f - Smooth(0.6f, 2.6f, _playerSpeed);
+                focusTarget = Mathf.Clamp01(puzzleCalm + stillnessCalm * still) * _groveNear;
+            }
+            float focusSeconds = Mathf.Max(0.05f, focusTarget > _focus ? settleSeconds : bloomBackSeconds);
+            _focus = Mathf.Lerp(_focus, focusTarget, 1f - Mathf.Exp(-dt * 3f / focusSeconds));
+
             target = Mathf.Clamp01(target + _pulse * 0.12f);
             float rate = target > _raw ? riseRate : fallRate;
             _raw = Mathf.MoveTowards(_raw, target, rate * dt);
             _pulse = Mathf.MoveTowards(_pulse, 0f, dt * 1.2f);
-            _intensity = Mathf.Clamp01(_raw * _userScale);
+            _intensity = Mathf.Clamp01(_raw * (1f - _focus) * _userScale);
             _clock += dt * (0.35f + 1.1f * _intensity);
 
             // Tint: an attuned nearby Mycari's role colour, else the grove's last note, else iridescent drift.
