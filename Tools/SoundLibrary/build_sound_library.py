@@ -368,7 +368,8 @@ class Lib:
         else:
             tmp = path + '.tmp.wav'
             wavfile.write(tmp, SR, (x * 32767).astype(np.int16))
-            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', tmp, '-c:a', 'libvorbis', '-q:a', '5', path], check=True)
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', tmp, '-fflags', '+bitexact', '-flags:a', '+bitexact',
+                            '-c:a', 'libvorbis', '-q:a', '5', path], check=True)   # bitexact: stable bytes across rebuilds
             os.remove(tmp)
         return rel
 
@@ -637,6 +638,29 @@ def build(src, project, analysis):
     L.cue('sfx.lore.close', arp(pluck, ['C6', 'F5'], 0.06), 'sfx', 0.5, pluck_src + ' -> C6, F5', 'log terminal closes')
     L.cue('sfx.pad.ripple', butter(reverb(at(rev, 'F3'), 1.5, 0.4), 'low', 1200), 'sfx', 0.35, bell_src + ' reversed -> F3 (low-passed)',
           'soft ground swell under a mushroom note', min_dist=3, max_dist=22)
+    # Mushroom puzzle feedback (replaces the stock buzzer / winner jingle at runtime):
+    # a soft falling-semitone "not quite" sigh with a pitch sag, and an F-major bell arpeggio for success.
+    def sag(x, cents=-45.0, start=0.15):
+        """Vari-speed pitch bend: playback rate glides down by `cents` after `start` seconds."""
+        n = len(x)
+        t = np.arange(n) / SR
+        bend = np.where(t < start, 0.0, cents * np.clip((t - start) / 0.45, 0, 1))
+        rate = 2 ** (bend / 1200.0)
+        idx = np.cumsum(rate) - rate[0]
+        idx = idx[idx < n - 1]
+        return np.interp(idx, np.arange(n), x).astype(np.float32)
+
+    wrongs = []
+    for hi, lo in (('A4', 'G#4'), ('D5', 'C#5'), ('F4', 'E4')):
+        NOTE_F.setdefault('G#4', 415.30); NOTE_F.setdefault('C#5', 554.37); NOTE_F.setdefault('E4', 329.63)
+        a1 = fade(at(soft, hi)[:int(0.32 * SR)], 0.002, 0.08)
+        a2 = sag(fade(at(soft, lo)[:int(0.9 * SR)], 0.002, 0.35))
+        body = mix((a1, 0, 0.8), (a2, 0.17, 1.0), (butter(noise(0.35), 'band', (500, 3000)) * env_adsr(int(0.35 * SR), 0.02, 0.2, 0, 0.1) * 0.12, 0.0, 1.0))
+        wrongs.append(reverb(butter(body, 'low', 2600), 1.1, 0.22))
+    L.cue('sfx.puzzle.wrong', wrongs, 'sfx', 0.6, soft_src + ' -> A4/G#4, D5/C#5, F4/E4 with a pitch sag (+ spore breath)',
+          'gentle "not quite" when a mushroom answer is wrong (replaces the buzzer)', mono=False, max_voices=1, min_interval=0.3)
+    L.cue('sfx.puzzle.solved', reverb(arp(bell, ['F5', 'A5', 'C6', 'F6'], 0.09), 1.8, 0.3), 'sfx', 0.75,
+          bell_src + ' -> F5 A5 C6 F6', 'the mushrooms answer back when the song is right (replaces the stock jingle)', mono=False, max_voices=1)
     L.cue('sfx.ls.restored', reverb(arp(bell, ['F4', 'A4', 'C5', 'F5'], 0.08), 1.6, 0.3), 'sfx', 0.65, bell_src + ' -> F4 A4 C5 F5', 'life support stabilised')
     a1, a2 = at(soft, 'A4')[:int(0.32 * SR)], at(soft, 'F4')[:int(0.32 * SR)]
     alarm = np.zeros(int(1.6 * SR), np.float32)

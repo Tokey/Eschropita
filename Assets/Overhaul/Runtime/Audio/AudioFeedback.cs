@@ -22,6 +22,8 @@ namespace Eschropita.Overhaul
         float _shardComboUntil;
         bool _lifeWasLow;
         float _nextGust;
+        MartianSequencePuzzle _puzzleTuned;
+        int _wrongVariant;
 
         // dialogue blips
         string _blipCue;
@@ -213,8 +215,40 @@ namespace Eschropita.Overhaul
         void OnPadSang(int i, Vector3 p) => Sfx.Play("sfx.pad.ripple", p, 0.6f, 1f + 0.06f * i);
         void OnPadPressed(int i, Vector3 p, bool ok) { if (ok) Sfx.Play("sfx.spores", p, 0.45f, 1f + 0.08f * i); }
         void OnPlayerTurn() => Sfx.Play("ui.toast", null, 0.5f, 1.12f);
-        void OnSolved(Vector3 p) { Sfx.Stinger("stinger.solved"); Sfx.Play("sfx.spores", p, 1f); }
-        void OnFailed(Vector3 p) => Sfx.Stinger("stinger.fail", 0.8f);
+        void OnSolved(Vector3 p)
+        {
+            // The puzzle plays its success arpeggio now; the theme blooms in right after it.
+            Sfx.Play("sfx.spores", p, 1f);
+            StartCoroutine(Later(0.75f, () => Sfx.Stinger("stinger.solved")));
+        }
+
+        void OnFailed(Vector3 p)
+        {
+            // The puzzle already played this miss's "not quite" (its wrongClip); line up a different one for next time.
+            var puzzle = SignalBridge.Instance != null ? SignalBridge.Instance.Puzzle : null;
+            int n = AudioCatalog.Variants("sfx.puzzle.wrong");
+            if (puzzle != null && n > 0)
+            {
+                _wrongVariant = (_wrongVariant + 1) % n;
+                var clip = AudioCatalog.Clip("sfx.puzzle.wrong", _wrongVariant);
+                if (clip != null) puzzle.wrongClip = clip;
+            }
+        }
+
+        /// <summary>
+        /// Swaps the mushroom puzzle's stock buzzer and winner jingle for in-key sounds cut from the designer's
+        /// material (a soft falling "not quite" and an F-major bell arpeggio). Runtime only; the scene keeps its clips.
+        /// </summary>
+        void TunePuzzleSounds()
+        {
+            var puzzle = SignalBridge.Instance != null ? SignalBridge.Instance.Puzzle : null;
+            if (puzzle == null || puzzle == _puzzleTuned) return;
+            _puzzleTuned = puzzle;
+            var wrong = AudioCatalog.Clip("sfx.puzzle.wrong", 0);
+            if (wrong != null) puzzle.wrongClip = wrong;
+            var solved = AudioCatalog.Clip("sfx.puzzle.solved", 0);
+            if (solved != null) puzzle.successClip = solved;
+        }
 
         // ---- sites / obelisk / tornado ---------------------------------------------------------------------
         void OnRepaired(TaskSite s)
@@ -309,6 +343,8 @@ namespace Eschropita.Overhaul
 
         void Update()
         {
+            TunePuzzleSounds();
+
             // Dialogue types ~35 characters per second: one soft blip every ~3 characters while typing.
             if (_blipCue != null)
             {

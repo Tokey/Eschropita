@@ -807,6 +807,44 @@
    "notes": "soft ground swell under a mushroom note"
   },
   {
+   "id": "sfx.puzzle.solved",
+   "files": [
+    "sfx/puzzle_solved"
+   ],
+   "bus": "sfx",
+   "volume": 0.75,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 1,
+   "minInterval": 0.04,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 001 @35.35s (B5) -> F5 A5 C6 F6",
+   "notes": "the mushrooms answer back when the song is right (replaces the stock jingle)"
+  },
+  {
+   "id": "sfx.puzzle.wrong",
+   "files": [
+    "sfx/puzzle_wrong_1",
+    "sfx/puzzle_wrong_2",
+    "sfx/puzzle_wrong_3"
+   ],
+   "bus": "sfx",
+   "volume": 0.6,
+   "loop": false,
+   "pitchJitter": 0.0,
+   "maxVoices": 1,
+   "minInterval": 0.3,
+   "minDistance": 3.0,
+   "maxDistance": 38.0,
+   "key": "",
+   "bpm": 0,
+   "source": "Loop 005 @11.64s (E5) -> A4/G#4, D5/C#5, F4/E4 with a pitch sag (+ spore breath)",
+   "notes": "gentle \"not quite\" when a mushroom answer is wrong (replaces the buzzer)"
+  },
+  {
    "id": "sfx.recruit",
    "files": [
     "sfx/recruit"

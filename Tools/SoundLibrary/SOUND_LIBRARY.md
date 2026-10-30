@@ -51,6 +51,8 @@ Analysis: tempo ~129 BPM (layers at 64.5 = half time), mushroom loops mostly F m
 | `sfx.ls.restored` | sfx | 1 | 5.49s | Loop 001 @35.35s (B5) -> F4 A4 C5 F5 | life support stabilised |
 | `sfx.mycari.leave` | sfx | 1 | 4.85s | Loop 001 @35.35s (B5) reversed -> C6, then F6 (+ long reverb) | a Mycari leaves through the dome door |
 | `sfx.pad.ripple` | sfx | 1 | 9.27s | Loop 001 @35.35s (B5) reversed -> F3 (low-passed) | soft ground swell under a mushroom note |
+| `sfx.puzzle.solved` | sfx | 1 | 3.74s | Loop 001 @35.35s (B5) -> F5 A5 C6 F6 | the mushrooms answer back when the song is right (replaces the stock jingle) |
+| `sfx.puzzle.wrong` | sfx | 3 | 2.17s | Loop 005 @11.64s (E5) -> A4/G#4, D5/C#5, F4/E4 with a pitch sag (+ spore breath) | gentle "not quite" when a mushroom answer is wrong (replaces the buzzer) |
 | `sfx.recruit` | sfx | 1 | 2.16s | Loop 016 @70.30s (F6) -> F5 A5 C6 | a Mycari agrees to follow |
 | `sfx.repair.loop` | sfx | 1 | 4.0s | Mushroom 4 Part Loop 007 46-52 (band-passed, reverb, looped) | fungal "knitting" while Fixers repair (3D loop) |
 | `sfx.repair.tick` | sfx | 3 | 0.18s | Loop 016 @70.30s (F6) -> A5 C6 F6 | sparkles while repair progresses |
