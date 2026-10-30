@@ -11,7 +11,7 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 | **E** | Interact (as before) — also reads lore terminals (E / Esc to close, W/S to scroll) |
 | **F7** | Spore-trip strength: 100 % → 50 % → off (remembered) |
 | **F9** | Toggle the redesigned level dressing vs. the original visuals (before/after) |
-| **F10** | Toggle the psychedelic UI type vs. the original type (before/after) |
+| **F10** | Toggle the new UI type vs. the original type (before/after) |
 
 ## What's in it
 
@@ -31,10 +31,10 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 - **Footsteps** — one step per foot contact of Escropita's run cycle (they keep time with her legs, storm slow-downs
   included), a soft gravel crunch on regolith and a spongy squish on the grove's mycelium floor, alternating feet, never
   the same take twice in a row.
-- **Psychedelic UI type** (`PsyType`) — 70s poster lettering for titles, names and grades (Shrikhand: sunset gradient,
-  ink outline, retro drop shadow, big titles sway gently) and a round, open face for everything you read (Fredoka, warm
-  cream with a thin outline and soft shadow, one size step up, faint text made more opaque); text panels turn deep
-  aubergine with a neon rim. Fonts are SIL OFL (`Assets/Overhaul/Resources/Overhaul/Fonts`, licences alongside).
+- **UI type** (`UiType`) — a refined 70s soft serif for titles and grades (Fraunces, capitals evenly tracked) and
+  speaker names (Fraunces Italic), and a Futura-style 60s/70s sans for everything you read (Jost, one size step up so it
+  reads larger than before). Colours, panels and their transparency are exactly the game's own; the only effect is a
+  faint soft shadow under the letters. Fonts are SIL OFL (`Assets/Overhaul/Resources/Overhaul/Fonts`, licences alongside).
 - **Intro** — the intro cut scene is *SP_ INTRO CUT SCENE_001* (1080p, 2:06, skippable as before), same file name and GUID
   as the old `Assets/Videos/intro.mp4`, so the scene reference is unchanged.
 - **Atmosphere** — moods per act (day / grove / storm / obelisk / bunker / hope), no more white flash at start, red
@@ -65,5 +65,5 @@ This was written without a Unity editor. Every script was compile-checked agains
 uGUI 2.5 / Cinemachine 3.1 source (0 errors, editor and player builds), but nothing has been seen rendered or heard
 in-engine yet. Worth a look on first play: the look of the procedural turbine/dome/grove, the strength of the trip warp
 (`TripVisuals`, `Hidden/Eschropita/TripWarp` — it switches itself off if the shader fails), mix levels
-(`AudioDirector` bus sliders), the balance numbers (`GameBalance` fields), and the UI type (`PsyType` presets; the HUD's
+(`AudioDirector` bus sliders), the balance numbers (`GameBalance` fields), and the UI type (`UiType`; the HUD's
 text sizes were checked against GameHUD's layout on paper only).
