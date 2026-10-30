@@ -157,10 +157,14 @@ namespace Eschropita.Overhaul
         }
 
         // ---- player ------------------------------------------------------------------------------------------
+        bool _leftFoot;
+
         void OnFootstep(Vector3 p, float speed01)
         {
-            Sfx.Play("sfx.footstep", p, 0.55f + 0.45f * speed01, 0.95f + 0.12f * speed01);
-            if (TripDirector.InGrove && Random.value < 0.3f) Sfx.Play("sfx.spores", p, 0.35f);
+            // Feet alternate: the left lands a touch softer and lower, so a run never sounds like one sample on repeat.
+            _leftFoot = !_leftFoot;
+            string cue = TripDirector.InGrove && AudioCatalog.Has("sfx.footstep.grove") ? "sfx.footstep.grove" : "sfx.footstep";
+            Sfx.Play(cue, p, (0.6f + 0.4f * speed01) * (_leftFoot ? 0.88f : 1f), _leftFoot ? 0.97f : 1.02f);
         }
 
         void OnInteracted(Vector3 p) => Sfx.Play("sfx.interact", p, 0.8f);

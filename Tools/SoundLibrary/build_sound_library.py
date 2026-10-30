@@ -245,6 +245,86 @@ def noise(dur, color='white'):
     return w.astype(np.float32)
 
 
+def svf_bandpass(x, fc, q):
+    """Time-varying (TPT state-variable) band-pass; fc in Hz, a number or one value per sample."""
+    fc = np.broadcast_to(np.asarray(fc, np.float64), x.shape)
+    g = np.tan(np.pi * np.clip(fc, 20, SR * 0.45) / SR)
+    k = 1.0 / q
+    ic1 = ic2 = 0.0
+    y = np.empty(len(x), np.float64)
+    for i in range(len(x)):
+        gi = g[i]
+        a1 = 1.0 / (1.0 + gi * (gi + k)); a2 = gi * a1; a3 = gi * a2
+        v3 = x[i] - ic2
+        v1 = a1 * ic1 + a2 * v3
+        v2 = ic2 + a2 * ic1 + a3 * v3
+        ic1, ic2 = 2 * v1 - ic1, 2 * v2 - ic2
+        y[i] = v1
+    return y.astype(np.float32)
+
+
+def resonate(x, fc, q):
+    b, a = signal.iirpeak(fc, q, fs=SR)
+    return signal.lfilter(b, a, x).astype(np.float32)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# footsteps (one per foot contact of the run cycle; each recipe takes its own random generator)
+# ---------------------------------------------------------------------------------------------------------------
+
+def regolith_step(rng):
+    """Boot on dusty Martian gravel: a soft heel thump, a granular crunch (PhISEM-style: grain rate follows the
+    impact energy, grains ring small stone resonances) that rolls heel -> toe, and a breath of sand. Low-passed:
+    thin air and a helmet take the hiss off."""
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    toe = rng.uniform(0.045, 0.075)
+    m = int(0.1 * SR)
+    tt = np.arange(m) / SR
+    f0 = rng.uniform(70, 95)
+    body = np.sin(2 * np.pi * np.cumsum(f0 * (1 + 0.7 * np.exp(-tt / 0.008))) / SR) * np.exp(-tt / 0.016) * np.minimum(1, tt / 0.002)
+    kn = butter(rng.standard_normal(m).astype(np.float32), 'band', (160, 900))
+    knock = kn / (np.abs(kn).max() + 1e-9) * np.exp(-tt / 0.011) * np.minimum(1, tt / 0.0012)
+    energy = np.exp(-t / 0.026) + rng.uniform(0.45, 0.7) * np.exp(-np.maximum(0, t - toe) / 0.024) * (t >= toe)
+    hits = rng.random(n) < np.clip(energy * rng.uniform(5000, 8000) / SR, 0, 0.9)
+    amps = np.minimum(rng.pareto(2.5, n) * 0.4 + 0.15, 1.6) * rng.choice([-1.0, 1.0], n) * np.sqrt(np.minimum(energy, 1.0))
+    grains = np.where(hits, amps, 0.0).astype(np.float32)
+    crunch = (resonate(grains, rng.uniform(550, 900), 2.2) + resonate(grains, rng.uniform(1300, 2100), 3.5) * 0.7
+              + resonate(grains, rng.uniform(2500, 3500), 5.0) * 0.3)
+    sand = butter(rng.standard_normal(n).astype(np.float32), 'band', (250, 2200)) * energy ** 1.4
+    x = np.zeros(n, np.float32)
+    x[:m] += body * 0.15 + knock * 0.8
+    x += crunch * 1.1 + sand * 0.3
+    return butter(butter(x, 'low', 4500), 'high', 40)
+
+
+def grove_step(rng):
+    """Boot on the grove's spongy mycelium floor: a muffled pad, a damp squish whose pitch falls as the foot
+    sinks in, and one or two tiny wet pops (damped sines with a rising chirp, like bursting bubbles)."""
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    m = int(0.14 * SR)
+    tt = np.arange(m) / SR
+    f0 = rng.uniform(58, 72)
+    body = np.sin(2 * np.pi * np.cumsum(f0 * (1 + 0.4 * np.exp(-tt / 0.015))) / SR) * np.exp(-tt / 0.024) * np.minimum(1, tt / 0.004)
+    pad = butter(rng.standard_normal(m).astype(np.float32), 'low', 320)
+    pad = pad / (np.abs(pad).max() + 1e-9) * np.exp(-tt / 0.03) * np.minimum(1, tt / 0.004)
+    env = np.minimum(1, t / 0.008) * np.exp(-t / rng.uniform(0.045, 0.06))
+    squish = svf_bandpass(rng.standard_normal(n).astype(np.float32), 380 + rng.uniform(800, 1100) * np.exp(-t / 0.05), 2.2) * env
+    pops = np.zeros(n, np.float32)
+    for _ in range(rng.integers(1, 3)):
+        p0 = rng.uniform(900, 1700)
+        damp = 0.043 * p0 + 0.0014 * p0 ** 1.5
+        tb = np.arange(int(0.05 * SR)) / SR
+        bub = np.sin(2 * np.pi * np.cumsum(p0 * (1 + 0.12 * damp * tb)) / SR) * np.exp(-damp * tb)
+        i0 = int(rng.uniform(0.02, 0.11) * SR)
+        pops[i0:i0 + len(bub)] += bub[:n - i0] * rng.uniform(0.25, 0.5)
+    x = np.zeros(n, np.float32)
+    x[:m] += body * 0.35 + pad * 0.45
+    x += squish * 0.55 + pops * 0.2
+    return butter(butter(x, 'low', 3200), 'high', 35)
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # analysis helpers
 # ---------------------------------------------------------------------------------------------------------------
@@ -671,16 +751,19 @@ def build(src, project, analysis):
     L.cue('sfx.ls.alarm', alarm, 'sfx', 0.45, soft_src + ' -> A4/F4 alternating', 'soft pulsing life-support alarm (loop)', loop=True, mono=False)
 
     print("synthesized / processed one-shots:")
-    steps = []
-    for k in range(6):
-        d = 0.11
-        n = butter(noise(d), 'band', (RNG.uniform(400, 700), RNG.uniform(2500, 4500)))
-        grains = (RNG.random(int(d * SR)) < 0.004).astype(np.float32) * RNG.uniform(0.5, 1.0)
-        e = env_adsr(int(d * SR), 0.004, 0.07, 0.0, 0.05)
-        low = sine(lambda t: 85 * (1 + np.exp(-t * 60)), d) * env_adsr(int(d * SR), 0.002, 0.04, 0.0, 0.03)
-        steps.append((n * 0.7 + butter(grains, 'high', 2000) * 0.5) * e + low * 0.5)
-    L.cue('sfx.footstep', steps, 'sfx', 0.32, 'synth (filtered noise crunch + grain clicks + thump)', 'soft regolith footsteps',
-          pitch_jitter=0.08, max_voices=2, min_interval=0.12, min_dist=2, max_dist=18)
+    # The first footstep recipe (a 110 ms white-noise burst) drew from the shared generator; advance it the same
+    # way so every cue after this point stays byte-identical. The footsteps now use their own generator.
+    for _ in range(6):
+        RNG.standard_normal(int(0.11 * SR)); RNG.uniform(); RNG.uniform(); RNG.random(int(0.11 * SR)); RNG.uniform()
+    frng = np.random.default_rng(7301)
+    L.cue('sfx.footstep', [regolith_step(frng) for _ in range(8)], 'sfx', 0.3,
+          'synth (boot thump + granular gravel crunch rolling heel -> toe + sand, low-passed)',
+          'running on dusty regolith, one per foot contact of the run cycle', pitch_jitter=0.04, max_voices=2,
+          min_interval=0.12, min_dist=2, max_dist=18)
+    L.cue('sfx.footstep.grove', [grove_step(frng) for _ in range(6)], 'sfx', 0.34,
+          'synth (muffled pad + damp squish with a falling filter + tiny wet pops)',
+          'running on the spongy mycelium floor of the mushroom grove', pitch_jitter=0.04, max_voices=2,
+          min_interval=0.12, min_dist=2, max_dist=18)
     tick = mix((butter(noise(0.03), 'high', 2500) * env_adsr(int(0.03 * SR), 0.001, 0.02, 0, 0.01), 0, 0.6),
                (fade(at(pluck, 'C6')[:int(0.06 * SR)], 0.001, 0.03), 0, 0.5))
     L.cue('sfx.interact', tick, 'sfx', 0.45, pluck_src + ' (60 ms) + noise tick', 'generic interact')

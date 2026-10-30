@@ -42,7 +42,8 @@ Analysis: tempo ~129 BPM (layers at 64.5 = half time), mushroom loops mostly F m
 | `sfx.decline` | sfx | 1 | 2.06s | Loop 005 @11.64s (E5) -> A4, F4 | a Mycari declines |
 | `sfx.dismiss` | sfx | 1 | 2.58s | Loop 005 @11.64s (E5) -> C4 | follower dismissed |
 | `sfx.door` | sfx | 1 | 1.38s | synth (clunk + airlock hiss) | dome door / airlock |
-| `sfx.footstep` | sfx | 6 | 0.11s | synth (filtered noise crunch + grain clicks + thump) | soft regolith footsteps |
+| `sfx.footstep` | sfx | 8 | 0.3s | synth (boot thump + granular gravel crunch rolling heel -> toe + sand, low-passed) | running on dusty regolith, one per foot contact of the run cycle |
+| `sfx.footstep.grove` | sfx | 6 | 0.3s | synth (muffled pad + damp squish with a falling filter + tiny wet pops) | running on the spongy mycelium floor of the mushroom grove |
 | `sfx.hit` | sfx | 3 | 0.9s | synth (thud + metallic partials + crack) | Breaker strikes a structure |
 | `sfx.interact` | sfx | 1 | 0.06s | Loop 016 @70.30s (F6) (60 ms) + noise tick | generic interact |
 | `sfx.lore.close` | sfx | 1 | 1.22s | Loop 016 @70.30s (F6) -> C6, F5 | log terminal closes |

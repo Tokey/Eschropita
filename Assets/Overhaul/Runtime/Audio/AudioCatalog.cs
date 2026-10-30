@@ -45,6 +45,7 @@ namespace Eschropita.Overhaul
         static Dictionary<string, Cue> _cues;
         static readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
         static readonly HashSet<string> _warned = new HashSet<string>();
+        static readonly Dictionary<string, int> _lastPick = new Dictionary<string, int>();
         static readonly System.Random _rng = new System.Random();
 
         public static int Count { get { Ensure(); return _cues.Count; } }
@@ -56,6 +57,7 @@ namespace Eschropita.Overhaul
             _cues = null;
             _clips.Clear();
             _warned.Clear();
+            _lastPick.Clear();
         }
 
         static void Ensure()
@@ -96,7 +98,8 @@ namespace Eschropita.Overhaul
             return c != null && c.files != null ? c.files.Length : 0;
         }
 
-        /// <summary>Clip for a cue; variant -1 picks a random variation. Null if the cue or file is missing.</summary>
+        /// <summary>Clip for a cue; variant -1 picks a random variation (never the one it picked last time, so
+        /// footsteps and blips don't stutter on a repeat). Null if the cue or file is missing.</summary>
         public static AudioClip Clip(string id, int variant = -1)
         {
             var c = Get(id);
@@ -105,7 +108,14 @@ namespace Eschropita.Overhaul
                 WarnOnce(id, "cue not in the sound library");
                 return null;
             }
-            int i = variant >= 0 ? variant % c.files.Length : _rng.Next(c.files.Length);
+            int n = c.files.Length, i;
+            if (variant >= 0) i = variant % n;
+            else
+            {
+                i = _rng.Next(n);
+                if (n > 1 && _lastPick.TryGetValue(id, out int last) && i == last) i = (i + 1 + _rng.Next(n - 1)) % n;
+                _lastPick[id] = i;
+            }
             string path = Root + c.files[i];
             if (_clips.TryGetValue(path, out var clip) && clip != null) return clip;
             clip = Resources.Load<AudioClip>(path);

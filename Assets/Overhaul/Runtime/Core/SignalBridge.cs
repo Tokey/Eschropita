@@ -35,6 +35,13 @@ namespace Eschropita.Overhaul
         Vector3 _lastFootPos;
         float _strideAccum;
         bool _footInit;
+        Animator _playerAnim;
+        bool _animSearched, _hasRunState;
+        float _lastRunTime = -1f;   // normalised time of the run state last frame; < 0 = not running
+        static readonly int RunState = Animator.StringToHash("Run");
+        // Foot contacts in Escropita's run cycle (normalised time): the heel strike on frame 1 and the other foot
+        // half a cycle later. Steps keep time with the legs, storm slow-downs included (they slow the animator).
+        static readonly float[] StepPhases = { 0f, 0.5f };
 
         class NpcTrack
         {
@@ -310,20 +317,61 @@ namespace Eschropita.Overhaul
             Vector3 d = pos - _lastFootPos; d.y = 0f;
             _lastFootPos = pos;
             float dist = d.magnitude;
-            if (dist > 2f) { _strideAccum = 0f; return; } // teleport / checkpoint
+            if (dist > 2f) { _strideAccum = 0f; _lastRunTime = -1f; return; } // teleport / checkpoint
             bool grounded = cc == null || cc.isGrounded || Physics.Raycast(pos + Vector3.up * 0.2f, Vector3.down, 1.5f);
-            if (!grounded || dist < 1e-4f) return;
             float speed = dist / Mathf.Max(Time.deltaTime, 1e-4f);
             float speed01 = Mathf.InverseLerp(1.5f, 6f, speed);
-            float stride = Mathf.Lerp(0.75f, 1.25f, speed01);
+            Vector3 feet = pos;
+            if (cc != null) feet = Player.transform.TransformPoint(cc.center) - Vector3.up * (cc.height * 0.5f * Player.transform.lossyScale.y);
+
+            if (!_animSearched)
+            {
+                _animSearched = true;
+                _playerAnim = Player.GetComponent<Animator>();
+                _hasRunState = _playerAnim != null && _playerAnim.runtimeAnimatorController != null && _playerAnim.HasState(0, RunState);
+            }
+            if (_hasRunState && _playerAnim != null && _playerAnim.isActiveAndEnabled)
+            {
+                // a step each time the run cycle passes a foot contact (the first one as soon as she sets off)
+                float now = RunNormalizedTime();
+                if (now < 0f) { _lastRunTime = -1f; return; }
+                float last = _lastRunTime;
+                if (last < 0f || now < last) last = now < 0.25f ? -1e-3f : now - 1e-3f;   // just set off: frame 1's heel strike counts
+                _lastRunTime = now;
+                if (!grounded) return;
+                foreach (float c in StepPhases)
+                {
+                    if (Mathf.Floor(now - c) > Mathf.Floor(last - c))
+                    {
+                        GameSignals.RaiseFootstep(feet, speed01);
+                        break;
+                    }
+                }
+                return;
+            }
+
+            // no run animation to follow: one step per stride, at about the same cadence (2.4 steps a second)
+            if (!grounded || dist < 1e-4f) return;
             _strideAccum += dist;
+            float stride = Mathf.Clamp(speed * 0.42f, 0.6f, 3f);
             if (_strideAccum >= stride)
             {
                 _strideAccum -= stride;
-                Vector3 feet = pos;
-                if (cc != null) feet = Player.transform.TransformPoint(cc.center) - Vector3.up * (cc.height * 0.5f * Player.transform.lossyScale.y);
                 GameSignals.RaiseFootstep(feet, speed01);
             }
+        }
+
+        /// <summary>Normalised time of the run state (also while blending into it), or -1 when she isn't running.</summary>
+        float RunNormalizedTime()
+        {
+            var a = _playerAnim;
+            if (a.IsInTransition(0))
+            {
+                var next = a.GetNextAnimatorStateInfo(0);
+                if (next.shortNameHash == RunState) return next.normalizedTime;
+            }
+            var cur = a.GetCurrentAnimatorStateInfo(0);
+            return cur.shortNameHash == RunState ? cur.normalizedTime : -1f;
         }
 
         void PollObjective()

@@ -645,20 +645,45 @@
     "sfx/footstep_3",
     "sfx/footstep_4",
     "sfx/footstep_5",
-    "sfx/footstep_6"
+    "sfx/footstep_6",
+    "sfx/footstep_7",
+    "sfx/footstep_8"
    ],
    "bus": "sfx",
-   "volume": 0.32,
+   "volume": 0.3,
    "loop": false,
-   "pitchJitter": 0.08,
+   "pitchJitter": 0.04,
    "maxVoices": 2,
    "minInterval": 0.12,
    "minDistance": 2,
    "maxDistance": 18,
    "key": "",
    "bpm": 0,
-   "source": "synth (filtered noise crunch + grain clicks + thump)",
-   "notes": "soft regolith footsteps"
+   "source": "synth (boot thump + granular gravel crunch rolling heel -> toe + sand, low-passed)",
+   "notes": "running on dusty regolith, one per foot contact of the run cycle"
+  },
+  {
+   "id": "sfx.footstep.grove",
+   "files": [
+    "sfx/footstep_grove_1",
+    "sfx/footstep_grove_2",
+    "sfx/footstep_grove_3",
+    "sfx/footstep_grove_4",
+    "sfx/footstep_grove_5",
+    "sfx/footstep_grove_6"
+   ],
+   "bus": "sfx",
+   "volume": 0.34,
+   "loop": false,
+   "pitchJitter": 0.04,
+   "maxVoices": 2,
+   "minInterval": 0.12,
+   "minDistance": 2,
+   "maxDistance": 18,
+   "key": "",
+   "bpm": 0,
+   "source": "synth (muffled pad + damp squish with a falling filter + tiny wet pops)",
+   "notes": "running on the spongy mycelium floor of the mushroom grove"
   },
   {
    "id": "sfx.hit",
