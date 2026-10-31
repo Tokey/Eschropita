@@ -101,6 +101,7 @@ public class GameHUD : MonoBehaviour
     RectTransform _scanLine;
     float _scanSweepT;
     float _promptY;
+    float _lastScanWave = -99f;
     HudBar _daffodilBar, _lifeBar, _windmillBar, _windmillShieldBar, _obeliskBar, _obeliskShieldBar;
     GameObject _objectiveRoot;
     TextMeshProUGUI _objectiveText;
@@ -654,6 +655,12 @@ public class GameHUD : MonoBehaviour
             energy01 = Mathf.Clamp01(daffodil.Energy / daffodil.MaxEnergy);
         _daffodilBar.SetVisible(true);
         _daffodilBar.SetTarget(energy01);
+        // each ground scan wave takes a chunk of charge: flash the bar as it hops down
+        if (daffodil != null && daffodil.LastScanWaveTime > _lastScanWave)
+        {
+            _lastScanWave = daffodil.LastScanWaveTime;
+            _daffodilBar.Punch();
+        }
         _daffodilBar.SetLabel(daffodil != null && daffodil.IsSleeping ? "DAFFODIL · RECHARGING" : "DAFFODIL");
 
         // Life support — only when the system exists in this scene.
@@ -1240,6 +1247,10 @@ public class GameHUD : MonoBehaviour
 
         public void SetTarget(float v01) => _target = Mathf.Clamp01(v01);
 
+        float _punch;
+        /// <summary>A quick flash and swell (a chunk of the value just went).</summary>
+        public void Punch() => _punch = 1f;
+
         public void SetLabel(string text)
         {
             if (text == _labelShown) return;
@@ -1265,6 +1276,12 @@ public class GameHUD : MonoBehaviour
             rt.anchorMax = new Vector2(_shown, 1f);
             fill.enabled = _shown > 0.002f;
             fill.color = colourByValue ? hud.ColorForValue(_shown) : fixedColor;
+            if (_punch > 0f)
+            {
+                _punch = Mathf.Max(0f, _punch - dt * 3.5f);
+                fill.color = Color.Lerp(fill.color, Color.white, _punch * 0.7f);
+                root.transform.localScale = new Vector3(1f + 0.015f * _punch, 1f + 0.12f * _punch, 1f);
+            }
 
             int percent = Mathf.RoundToInt(_shown * 100f);
             if (percent != _percentShown)

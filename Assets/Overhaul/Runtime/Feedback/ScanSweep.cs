@@ -75,7 +75,7 @@ namespace Eschropita.Overhaul
             _beam.enabled = false;
         }
 
-        void OnScanStart() { _scanning = true; _waveStart = Time.time; }
+        void OnScanStart() { _scanning = true; if (FollowPlayer.Instance == null || FollowPlayer.Instance.scanChargePerWave <= 0f) _waveStart = Time.time; }
         void OnScanStop() => _scanning = false;
 
         void Update()
@@ -83,7 +83,9 @@ namespace Eschropita.Overhaul
             if (_mat == null) return;
             var daffodil = FollowPlayer.Instance;
             _strength = Mathf.MoveTowards(_strength, _scanning && daffodil != null ? 1f : 0f, Time.deltaTime * (_scanning ? 6f : 1.5f));
-            if (_scanning && Time.time - _waveStart >= interval) _waveStart = Time.time;
+            // Daffodil sends the waves (each one takes its charge); follow her timing so bar and ground agree
+            if (daffodil != null && daffodil.scanChargePerWave > 0f) _waveStart = daffodil.LastScanWaveTime;
+            else if (_scanning && Time.time - _waveStart >= interval) _waveStart = Time.time;
             float age = Time.time - _waveStart;
             bool on = daffodil != null && _strength > 0.001f;
             if (_volume.enabled != on) _volume.enabled = on;

@@ -14,8 +14,15 @@ public class FollowPlayer : MonoBehaviour
     public float maxEnergy = 100f;
     [SerializeField] public float energy = 100f;
 
-    [Tooltip("Drain per second while scanning (HOLD V)")]
+    [Tooltip("Drain per second while scanning (HOLD V). Only used when scanChargePerWave is 0.")]
     public float scanDrainPerSecond = 35f;
+
+    [Tooltip("Charge each ground scan wave takes, all at once (the bar hops down as the wave leaves). " +
+             "0 falls back to the continuous scanDrainPerSecond.")]
+    public float scanChargePerWave = 8f;
+
+    [Tooltip("Seconds between ground scan waves while V is held (the first wave goes out on the press).")]
+    public float scanWaveInterval = 1.6f;
 
     [Tooltip("Drain per second while following/moving")]
     public float followDrainPerSecond = 0.4f;
@@ -61,6 +68,7 @@ public class FollowPlayer : MonoBehaviour
     private bool isSleeping;
     private bool isScanning;
     private float nextScanPulseTime;
+    private float nextScanWaveTime;
 
     // Follow throttling: last point we actually handed to the agent.
     private Vector3 _lastDestination;
@@ -80,8 +88,12 @@ public class FollowPlayer : MonoBehaviour
     /// <summary>Seconds spent scanning since the scene started (tutorial gating).</summary>
     public float TotalScanSeconds { get; private set; }
     public bool HasEverScanned { get; private set; }
+    /// <summary>Time.time the last ground scan wave went out (ScanSweep starts its wave from it).</summary>
+    public float LastScanWaveTime { get; private set; } = -99f;
 
     public event System.Action OnScanStarted;
+    /// <summary>A ground scan wave left Daffodil and took its charge.</summary>
+    public event System.Action OnScanWave;
     public event System.Action OnScanStopped;
     public event System.Action OnFellAsleep;
     public event System.Action OnWokeUp;
@@ -145,6 +157,15 @@ public class FollowPlayer : MonoBehaviour
         {
             SetScanning(true);
             TotalScanSeconds += dt;
+
+            // each ground wave takes its charge in one go
+            if (scanChargePerWave > 0f && Time.time >= nextScanWaveTime)
+            {
+                nextScanWaveTime = Time.time + Mathf.Max(0.2f, scanWaveInterval);
+                LastScanWaveTime = Time.time;
+                energy = Mathf.Clamp(energy - scanChargePerWave, 0f, maxEnergy);
+                OnScanWave?.Invoke();
+            }
 
             // scan pulses while held
             if (Time.time >= nextScanPulseTime)
@@ -214,8 +235,9 @@ public class FollowPlayer : MonoBehaviour
 
         if (isScanning)
         {
-            // rapid drain while holding V
-            energy = Mathf.Clamp(energy - scanDrainPerSecond * dt, 0f, maxEnergy);
+            // the waves pay for the scan; a steady drain only when they are switched off
+            if (scanChargePerWave <= 0f)
+                energy = Mathf.Clamp(energy - scanDrainPerSecond * dt, 0f, maxEnergy);
             return;
         }
 
@@ -249,6 +271,8 @@ public class FollowPlayer : MonoBehaviour
         {
             HasEverScanned = true;
             nextScanPulseTime = 0f; // pulse immediately so labels appear on the first frame
+            // the first wave goes out on the press, unless one just left (tapping V does not spam waves)
+            nextScanWaveTime = Mathf.Max(Time.time, LastScanWaveTime + Mathf.Max(0.2f, scanWaveInterval) * 0.6f);
             OnScanStarted?.Invoke();
         }
         else
