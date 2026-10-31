@@ -41,6 +41,22 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
   faint soft shadow under the letters. Fonts are SIL OFL (`Assets/Overhaul/Resources/Overhaul/Fonts`, licences alongside).
 - **Intro** — the intro cut scene is *SP_ INTRO CUT SCENE_001* (1080p, 2:06, skippable as before), same file name and GUID
   as the old `Assets/Videos/intro.mp4`, so the scene reference is unchanged.
+  It plays on a battered En-Joy relay radio-tablet (`IntroDevice`): scanlines, static and a warbling signal, and no
+  HUD or Daffodil readout while it runs. Closed captions from the game doc's script
+  (`Resources/Overhaul/Captions/intro.txt`, SRT; C toggles them) crawl left across the device's own glowing
+  dot-matrix read-out, like an old calculator's (DotGothic16, OFL). Each line enters as it is spoken. At the end, or
+  on skip, the screen switches off like a tube, the device drops away toward Escropita, and the camera pulls back
+  from close on her into the scene.
+- **Daffodil** (`DaffodilPuppet`) — the sphere-and-capsule stand-in is replaced by her painting
+  (`Assets/Sprites/Daffodil.png`), cut into layers by `Tools/Daffodil/cut_rig.py` (atlas and layout in
+  `Resources/Overhaul/Daffodil`) and animated as a puppet. She hovers on her jet rings with a soft shadow below and
+  bobs, her glass head a beat behind her body. She blinks, glances at Escropita, twitches an ear, paddles her paws,
+  and the daffodil in her dome sways. Moving, she leans in, ears, flower and rings trailing. Scanning, her ears perk
+  and quiver, her paws lift and a cyan halo glows behind her head. On low charge her eyelids droop and the jets
+  sputter. Out of charge she sinks to the ground, eyes shut and ears drooping; rebooting, she pops back up.
+- **Scan** — waves roll out from Daffodil across the actual ground (`ScanSweep`). Each wave takes its charge at once
+  (`FollowPlayer.scanChargePerWave`, 8 % every 1.6 s while V is held), so the bar hops down with every wave and
+  flashes; the average cost is the same as before.
 - **Atmosphere** — moods per act (day / grove / storm / obelisk / bunker / hope), no more white flash at start, red
   breathing overlay when life support is critical.
 - **Tactile feedback** — particles, light flashes, ground rings, beams, a glowing tether to your follower, repair streams,
