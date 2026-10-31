@@ -24,6 +24,10 @@ Shader "Eschropita/Soft Glow"
         _Softness ("Disc Softness", Range(0.1,6)) = 1.5
         _RingRadius ("Ring Radius", Range(0,1)) = 0.72
         _RingWidth ("Ring Width", Range(0.01,0.5)) = 0.1
+
+        // LessEqual by default. Always (8) for markings laid on the ground, which would otherwise be cut by
+        // every bump of uneven terrain.
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
 
     SubShader
@@ -40,6 +44,7 @@ Shader "Eschropita/Soft Glow"
         Cull Off
         Lighting Off
         ZWrite Off
+        ZTest [_ZTest]
         Blend One OneMinusSrcAlpha
 
         Pass

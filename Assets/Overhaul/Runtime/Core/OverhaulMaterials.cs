@@ -173,6 +173,16 @@ namespace Eschropita.Overhaul
             return m;
         }
 
+        /// <summary>
+        /// Makes a ground marking (ring, disc, path) draw over the terrain instead of being cut by its bumps. Works
+        /// on the soft-glow material; a no-op on anything else.
+        /// </summary>
+        public static Material OverGround(Material m)
+        {
+            if (m != null && m.HasProperty("_ZTest")) m.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
+            return m;
+        }
+
         /// <summary>HDRP/Decal material for a DecalProjector.</summary>
         public static Material Decal(string name, Texture baseMap, Texture normalMap = null, Texture maskMap = null,
                                      Color? tint = null, float opacity = 1f, Color? emissive = null, Texture emissiveMap = null,

@@ -27,8 +27,8 @@ namespace Eschropita.Overhaul
 
             _root = new GameObject("Spore Aura").transform;
             _root.SetParent(transform, false);
-            _disc = OverhaulMaterials.SoftGlow("AuraDisc", _color, 1.2f, 0.95f, OverhaulMaterials.GlowShape.Disc, null, 2.2f);
-            _ring = OverhaulMaterials.SoftGlow("AuraRing", _color, 2.2f, 1f, OverhaulMaterials.GlowShape.Ring, null, 1.5f, 0.78f, 0.07f);
+            _disc = OverhaulMaterials.OverGround(OverhaulMaterials.SoftGlow("AuraDisc", _color, 1.2f, 0.95f, OverhaulMaterials.GlowShape.Disc, null, 2.2f));
+            _ring = OverhaulMaterials.OverGround(OverhaulMaterials.SoftGlow("AuraRing", _color, 2.2f, 1f, OverhaulMaterials.GlowShape.Ring, null, 1.5f, 0.78f, 0.07f));
             var disc = OverhaulPrimitives.EffectRenderer(_root, "Disc", OverhaulPrimitives.GroundQuad, _disc);
             disc.transform.localScale = new Vector3(2.6f, 1f, 2.6f);
             _ringT = OverhaulPrimitives.EffectRenderer(_root, "Ring", OverhaulPrimitives.GroundQuad, _ring).transform;

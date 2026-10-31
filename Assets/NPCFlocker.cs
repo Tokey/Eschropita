@@ -341,6 +341,11 @@ public class NPCFlocker : MonoBehaviour
             speed = movement.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
         }
 
+        // Working at a station: face the site it is fixing or taking apart, not the way it last walked
+        // (the walk between stations is tangential, which left it facing away from the job).
+        if (state == NPCState.Work && _task != null && (_atStation || speed <= 0.05f))
+            movement = _task.transform.position - transform.position;
+
         bool moving = speed > 0.05f;
         if (_animator != null)
         {

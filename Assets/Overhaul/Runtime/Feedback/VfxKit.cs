@@ -285,7 +285,7 @@ namespace Eschropita.Overhaul
                 if (k._rings.Count >= 32) r = k._rings[0];
                 else
                 {
-                    r = new RingFx { m = OverhaulMaterials.SoftGlow("VfxRing", Color.white, 2f, 1f, OverhaulMaterials.GlowShape.Ring, null, 1.5f, 0.8f, 0.08f) };
+                    r = new RingFx { m = OverhaulMaterials.OverGround(OverhaulMaterials.SoftGlow("VfxRing", Color.white, 2f, 1f, OverhaulMaterials.GlowShape.Ring, null, 1.5f, 0.8f, 0.08f)) };
                     r.t = OverhaulPrimitives.EffectRenderer(k.transform, "VFX Ring", OverhaulPrimitives.GroundQuad, r.m).transform;
                     k._rings.Add(r);
                 }
