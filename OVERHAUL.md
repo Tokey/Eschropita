@@ -95,6 +95,13 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
   home, so a Mycari that gives up on your song walks all the way back instead of standing on the pads.
 - **Wandering Mycari** — at home they stroll (`roamSpeed` 1.1, was 0 = standing still): a short walk of 2–6 m
   (`wanderStep`), loosely with the flock and never into the grove, then a rest of about 1–4 s (`retargetRoamEvery`).
+- **Edit-mode preview** (`Assets/Overhaul/Editor/Core/OverhaulEditPreview.cs`) — the scene shows the overhaul without
+  pressing Play: the same build steps as in play (turbine, life-support plant, organic grove, light paths, biodome,
+  colony props, lore terminals) around the same landmarks, plus Daffodil's painting where her puppet floats. Nothing
+  is written into the scene: the preview is DontSave and excluded from NavMesh bakes, and the originals it replaces
+  are hidden in the Scene view only (scene visibility). It clears itself before Play and rebuilds after.
+  Tools ▸ Eschropita ▸ Overhaul ▸ Edit-Mode Preview toggles it; ▸ Rebuild Edit-Mode Preview refreshes it after
+  moving a landmark.
 - **Level** — Mars wind turbine (spins with windmill health, fungal repair patches, shard-shield plates), visible
   life-support plant with conduits to the dome door, organic glowing grove floor, JoyTech biodome + airlock door,
   Escropita's lander, ruins, surveillance masts, bunker hatch, horizon landmarks. Textures: CC0 Poly Haven

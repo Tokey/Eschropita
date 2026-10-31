@@ -244,7 +244,7 @@ namespace Eschropita.Overhaul
             var tmp = src.ToMesh("tmp", false, false);
             var tris = tmp.triangles;
             for (int i = 0; i < tris.Length; i += 3) mb.Tri(tris[i], tris[i + 1], tris[i + 2]);
-            Object.Destroy(tmp);
+            LevelKit.Dispose(tmp);
             return mb;
         }
     }

@@ -60,41 +60,51 @@ namespace Eschropita.Overhaul
 
             var root = new GameObject("Lore Terminals").transform;
             root.SetParent(transform, false);
+            _terminals.AddRange(Place(root));
+        }
+
+        /// <summary>
+        /// Puts the six terminals around the landmarks (resolved first, see <see cref="OverhaulLandmarks"/>). Also used
+        /// by the editor's edit-mode preview.
+        /// </summary>
+        public static List<LoreTerminal> Place(Transform root)
+        {
+            var list = new List<LoreTerminal>();
+            void Add(string id, Vector3 pos, Vector3 face, System.Func<bool> available)
+            {
+                if (LoreLibrary.Get(id) == null) return;
+                list.Add(LoreTerminal.Create(root, id, OverhaulLandmarks.OnGround(pos), face, available));
+            }
+
             Vector3 spawn = OverhaulLandmarks.Spawn, wind = OverhaulLandmarks.Windmill, ob = OverhaulLandmarks.Obelisk;
             Vector3 home = OverhaulLandmarks.Home, shuttle = OverhaulLandmarks.Shuttle, plant = OverhaulLandmarks.LifeSupportPlant;
 
             Vector3 toSpawn = Flat(spawn - wind);
             Vector3 aniyaPos = wind + toSpawn * 5.5f + Vector3.Cross(Vector3.up, toSpawn) * 2.5f;
             if (plant != Vector3.zero && (aniyaPos - plant).sqrMagnitude < 16f) aniyaPos -= Vector3.Cross(Vector3.up, toSpawn) * 5f;
-            Add(root, "aniya_log_240", aniyaPos, wind, () => Phase >= GamePhase.TornadoStrike);
+            Add("aniya_log_240", aniyaPos, wind, () => Phase >= GamePhase.TornadoStrike);
 
             Vector3 obToSpawn = Flat(spawn - ob);
             Vector3 side = Vector3.Cross(Vector3.up, obToSpawn);
-            Add(root, "vera_sterling", ob + obToSpawn * 4.5f + side * 1.5f, ob, () =>
+            Add("vera_sterling", ob + obToSpawn * 4.5f + side * 1.5f, ob, () =>
             {
                 var o = SignalBridge.Instance != null ? SignalBridge.Instance.Obelisk : null;
                 return Phase >= GamePhase.Bunker || (o != null && o.Stage == ObeliskStage.Destroyed);
             });
-            Add(root, "hargrave_logs", ob - obToSpawn * 3.8f + side * 3.2f, ob, () => Phase >= GamePhase.Bunker);
-            Add(root, "surveillance_dossier", ob - obToSpawn * 3.8f - side * 3.2f, ob, () => Phase >= GamePhase.Bunker);
+            Add("hargrave_logs", ob - obToSpawn * 3.8f + side * 3.2f, ob, () => Phase >= GamePhase.Bunker);
+            Add("surveillance_dossier", ob - obToSpawn * 3.8f - side * 3.2f, ob, () => Phase >= GamePhase.Bunker);
 
             Vector3 doorOut = OverhaulLandmarks.DoorFacing;
             Vector3 doorSide = Vector3.Cross(Vector3.up, doorOut);
-            Add(root, "joytech_brochure", home + doorOut * 2.5f + doorSide * 3.2f, home + doorOut * 6f, null);
+            Add("joytech_brochure", home + doorOut * 2.5f + doorSide * 3.2f, home + doorOut * 6f, null);
 
             Vector3 sh = shuttle != Vector3.zero ? shuttle : spawn + new Vector3(-7f, 0f, -2f);
             Vector3 shToSpawn = Flat(spawn - sh);
-            Add(root, "danu_radio", sh + shToSpawn * 3.6f + Vector3.Cross(Vector3.up, shToSpawn) * 1.6f, spawn, null);
+            Add("danu_radio", sh + shToSpawn * 3.6f + Vector3.Cross(Vector3.up, shToSpawn) * 1.6f, spawn, null);
+            return list;
         }
 
         static Vector3 Flat(Vector3 v) { v.y = 0f; return v.sqrMagnitude > 1e-4f ? v.normalized : Vector3.forward; }
-
-        void Add(Transform root, string id, Vector3 pos, Vector3 face, System.Func<bool> available)
-        {
-            if (LoreLibrary.Get(id) == null) return;
-            pos = OverhaulLandmarks.OnGround(pos);
-            _terminals.Add(LoreTerminal.Create(root, id, pos, face, available));
-        }
 
         void UpdatePrompt()
         {

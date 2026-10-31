@@ -19,13 +19,21 @@ namespace Eschropita.Overhaul
 
         public static void Release()
         {
-            foreach (var o in _owned) if (o != null) Object.Destroy(o);
+            foreach (var o in _owned) Dispose(o);
             _owned.Clear();
             _mats.Clear();
             _outline = null;
         }
 
         public static T Own<T>(T o) where T : Object { if (o != null) _owned.Add(o); return o; }
+
+        /// <summary>Destroy that also works outside play mode (the editor's edit-mode preview builds with this kit).</summary>
+        public static void Dispose(Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) Object.Destroy(o);
+            else Object.DestroyImmediate(o);
+        }
 
         static Texture2D Tex(string name) => Resources.Load<Texture2D>("Overhaul/Textures/" + name);
 

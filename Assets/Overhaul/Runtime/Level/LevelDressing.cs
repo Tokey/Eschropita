@@ -40,54 +40,70 @@ namespace Eschropita.Overhaul
 
             _root = new GameObject("== JoyTech Overhaul (runtime) ==").transform;
             var bridge = SignalBridge.Instance;
+            var src = new Sources
+            {
+                windmill = bridge != null ? bridge.Windmill : null,
+                grove = bridge != null ? bridge.Grove : null,
+                pads = bridge != null && bridge.Puzzle != null ? bridge.Puzzle.pads : null,
+            };
+            foreach (var _ in BuildSteps(_root, src, _hidden, HideRenderers)) yield return null;
+        }
 
-            Try("Mars wind turbine", () =>
+        /// <summary>The scene objects the dressing is built around.</summary>
+        public struct Sources
+        {
+            public TaskSite windmill;
+            public MushroomFieldTrigger grove;
+            public GameObject[] pads;
+        }
+
+        /// <summary>
+        /// The dressing, one piece per step: the runtime waits a frame between pieces, the editor's edit-mode preview
+        /// runs them straight through. Landmarks must be resolved first (<see cref="OverhaulLandmarks"/>).
+        /// <paramref name="hide"/> hides an original visual a piece replaces; the grove reports the stone tile
+        /// renderers it switched off in <paramref name="hidden"/>.
+        /// </summary>
+        public static IEnumerable<string> BuildSteps(Transform root, Sources src, List<Renderer> hidden, System.Action<GameObject> hide)
+        {
+            yield return Step("Mars wind turbine", () =>
             {
-                var site = bridge != null ? bridge.Windmill : null;
-                if (site == null) return;
-                HideRenderers(site.gameObject);
-                MarsTurbine.Build(_root, OverhaulLandmarks.Windmill, OverhaulLandmarks.Spawn, OverhaulLandmarks.LifeSupportPlant);
+                if (src.windmill == null) return;
+                hide(src.windmill.gameObject);
+                MarsTurbine.Build(root, OverhaulLandmarks.Windmill, OverhaulLandmarks.Spawn, OverhaulLandmarks.LifeSupportPlant);
             });
-            yield return null;
-            Try("Life support plant", () => LifeSupportPlant.Build(_root, OverhaulLandmarks.LifeSupportPlant, OverhaulLandmarks.Windmill, OverhaulLandmarks.Home));
-            yield return null;
-            Try("Organic grove", () =>
+            yield return Step("Life support plant", () => LifeSupportPlant.Build(root, OverhaulLandmarks.LifeSupportPlant, OverhaulLandmarks.Windmill, OverhaulLandmarks.Home));
+            yield return Step("Organic grove", () =>
             {
-                var grove = bridge != null ? bridge.Grove : null;
-                if (grove == null) return;
-                var pads = bridge.Puzzle != null ? bridge.Puzzle.pads : null;
-                OrganicGrove.Build(_root, grove, pads, new[] { OverhaulLandmarks.Windmill, OverhaulLandmarks.Obelisk, OverhaulLandmarks.Home }, _hidden);
+                if (src.grove == null) return;
+                OrganicGrove.Build(root, src.grove, src.pads, new[] { OverhaulLandmarks.Windmill, OverhaulLandmarks.Obelisk, OverhaulLandmarks.Home }, hidden);
             });
-            yield return null;
-            Try("Light paths", () =>
+            yield return Step("Light paths", () =>
             {
-                var grove = bridge != null ? bridge.Grove : null;
                 float r = 6.5f;
-                var col = grove != null ? grove.GetComponent<Collider>() : null;
+                var col = src.grove != null ? src.grove.GetComponent<Collider>() : null;
                 if (col != null) r = Mathf.Clamp(Mathf.Max(col.bounds.extents.x, col.bounds.extents.z) * 1.1f, 5f, 10f);
-                LightPaths.Build(_root, OverhaulLandmarks.GroveCenter, r, new[]
+                LightPaths.Build(root, OverhaulLandmarks.GroveCenter, r, new[]
                 {
                     (OverhaulLandmarks.Windmill, 3.6f, OverhaulPalette.RoleFixer, NPCRole.Worker),
                     (OverhaulLandmarks.Obelisk, 4.2f, OverhaulPalette.RoleBreaker, NPCRole.Attacker),
                     (OverhaulLandmarks.Home, 1.8f, OverhaulPalette.RoleWanderer, NPCRole.Wanderer),
                 });
             });
-            yield return null;
-            Try("JoyTech biodome", () =>
+            yield return Step("JoyTech biodome", () =>
             {
                 var home = GameObject.Find("MycariHome");
-                if (home != null) HideRenderers(home);
+                if (home != null) hide(home);
                 if (OverhaulLandmarks.DomeCenter != Vector3.zero)   // zero: no spot clear of the Mycari's roam area
-                    JoyTechDome.Build(_root, OverhaulLandmarks.DomeCenter, OverhaulLandmarks.DomeRadius, OverhaulLandmarks.Home, OverhaulLandmarks.DoorFacing);
+                    JoyTechDome.Build(root, OverhaulLandmarks.DomeCenter, OverhaulLandmarks.DomeRadius, OverhaulLandmarks.Home, OverhaulLandmarks.DoorFacing);
             });
-            yield return null;
-            Try("Colony props", () => ColonyProps.Build(_root));
+            yield return Step("Colony props", () => ColonyProps.Build(root));
         }
 
-        void Try(string what, System.Action build)
+        static string Step(string what, System.Action build)
         {
             try { build(); }
             catch (System.Exception e) { Debug.LogWarning("[Overhaul] Level dressing: " + what + " failed: " + e); }
+            return what;
         }
 
         void HideRenderers(GameObject go)
