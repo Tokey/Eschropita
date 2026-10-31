@@ -61,6 +61,18 @@ public class TornadoCalamity : MonoBehaviour
              "The whole slow fades in as the tornado grows.")]
     [Range(0.05f, 1f)] public float playerSlowAtEdge = 0.5f;
     [Min(0f)] public float siteDamagePerSecond = 5f;
+
+    [Header("Wind around the funnel (player)")]
+    [Tooltip("Within this distance (times intensity) the wind has hold of the player: it slows them more the closer " +
+             "they get (playerSlowMultiplier at the core) and shoves them round the funnel. Wider than the damage trigger.")]
+    [Min(0f)] public float windReach = 9f;
+    [Tooltip("Speed multiplier at the outer edge of the wind.")]
+    [Range(0.05f, 1f)] public float playerSlowAtWindRim = 0.75f;
+    [Tooltip("Sideways shove (m/s) at the core: the wind circles the funnel.")]
+    [Min(0f)] public float windSwirl = 2.4f;
+    [Tooltip("Pull toward the funnel (m/s) at the core, kept under the slowed walking speed so the player can always " +
+             "fight free, slowly.")]
+    [Min(0f)] public float windPull = 0.8f;
     [Tooltip("Damage radius scales with size via: radius = scale * damageRadiusFactor")]
     [Min(0.01f)] public float damageRadiusFactor = 0.5f;
 
@@ -79,6 +91,8 @@ public class TornadoCalamity : MonoBehaviour
 
     /// <summary>A tornado is currently up (growing, at peak or shrinking).</summary>
     public bool IsActive => _active;
+    /// <summary>0..1 how hard the wind has hold of the player right now (drives the struggle visuals).</summary>
+    public float PlayerStruggle { get; private set; }
     public Vector3 Position => transform.position;
     public event System.Action OnSpawned, OnEnded;
 
@@ -186,6 +200,61 @@ public class TornadoCalamity : MonoBehaviour
     void OnDisable()
     {
         Deactivate();
+    }
+
+    PlayerController _windPlayer;
+    CharacterController _windController;
+    float _nextPlayerLookup;
+
+    void Update()
+    {
+        if (_active) UpdatePlayerWind(Time.deltaTime);
+        else PlayerStruggle = 0f;
+    }
+
+    /// <summary>
+    /// The player inside the wind: slowed (their legs keep pumping, see PlayerController.stormStrideSlowdown),
+    /// shoved round the funnel and dragged a little toward it, gusting. All of it fades in as the funnel grows.
+    /// </summary>
+    void UpdatePlayerWind(float dt)
+    {
+        if (_windPlayer == null && Time.time >= _nextPlayerLookup)
+        {
+            _nextPlayerLookup = Time.time + 1f;
+            _windPlayer = FindAnyObjectByType<PlayerController>();
+            _windController = _windPlayer ? _windPlayer.GetComponent<CharacterController>() : null;
+        }
+        if (_windPlayer == null || !_windPlayer.isActiveAndEnabled)
+        {
+            PlayerStruggle = 0f;
+            CleanupPlayerSlow();
+            return;
+        }
+
+        Vector3 to = _windPlayer.transform.position - transform.position;
+        to.y = 0f;
+        float d = to.magnitude;
+        float reach = Mathf.Max(_col != null ? _col.radius : 0f, windReach * intensity);
+        float grown = Mathf.Clamp01(_scale / Mathf.Max(0.001f, ScaledMaxScale));
+        float k = d < reach ? 1f - d / reach : 0f;   // 0 at the edge of the wind, 1 at the core
+        PlayerStruggle = k * grown;
+        if (PlayerStruggle <= 0.001f)
+        {
+            CleanupPlayerSlow();
+            return;
+        }
+
+        _slowedPlayer = _windPlayer;
+        float slow = Mathf.Lerp(playerSlowAtWindRim, playerSlowMultiplier, k * k);
+        _windPlayer.SetSpeedMultiplier(Mathf.Lerp(1f, slow, grown));
+
+        if (_windController != null && _windController.enabled && d > 0.05f)
+        {
+            Vector3 dir = to / d;
+            float gust = 0.6f + 0.8f * Mathf.PerlinNoise(Time.time * 1.7f, 0.31f);
+            Vector3 push = Vector3.Cross(Vector3.up, dir) * windSwirl * k - dir * windPull * k * k;
+            _windController.Move(push * gust * grown * dt);
+        }
     }
 
     void FixedUpdate()
@@ -575,15 +644,7 @@ public class TornadoCalamity : MonoBehaviour
     {
         if (!_active) return;
 
-        if (other.CompareTag("Player"))
-        {
-            var pc = other.GetComponentInParent<PlayerController>();
-            if (pc)
-            {
-                _slowedPlayer = pc;
-                pc.SetSpeedMultiplier(PlayerSlowAt(pc.transform.position));
-            }
-        }
+        // The player is handled by the wind field in Update (wider than this trigger).
 
         // Site colliders may sit on children of the TaskSite; damage the site once per physics step.
         var site = other.GetComponentInParent<TaskSite>();
@@ -600,47 +661,11 @@ public class TornadoCalamity : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Speed multiplier for a player standing at worldPos: playerSlowMultiplier at the core, easing to
-    /// playerSlowAtEdge at the rim of the trigger, and faded in by how far the tornado has grown.
-    /// </summary>
-    float PlayerSlowAt(Vector3 worldPos)
-    {
-        // Horizontal distance only: the funnel is a column, so standing higher or lower than the
-        // trigger's centre must not loosen its grip.
-        Vector3 centre = transform.TransformPoint(_col.center);
-        float dx = worldPos.x - centre.x, dz = worldPos.z - centre.z;
-        float d = Mathf.Sqrt(dx * dx + dz * dz);
-
-        // The trigger's current world radius across the ground.
-        Vector3 ls = transform.lossyScale;
-        float r = _col.radius * Mathf.Max(Mathf.Abs(ls.x), Mathf.Abs(ls.z));
-
-        // Squared rather than linear, so the grip holds close to the core value further out and
-        // loosens mostly toward the rim.
-        float k = Mathf.Clamp01(d / Mathf.Max(0.001f, r));
-        float slow = Mathf.Lerp(playerSlowMultiplier, playerSlowAtEdge, k * k);
-
-        // The trigger never shrinks below minDamageRadius, so a funnel that is still forming is already
-        // full width. Weighting by growth keeps a wisp from grabbing as hard as the finished storm.
-        float g = Mathf.Clamp01(_scale / Mathf.Max(0.001f, ScaledMaxScale));
-        return Mathf.Lerp(1f, slow, g);
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            var pc = other.GetComponentInParent<PlayerController>();
-            if (pc) pc.SetSpeedMultiplier(1f);
-            if (_slowedPlayer == pc) _slowedPlayer = null;
-        }
-    }
-
     void OnDestroy() => CleanupPlayerSlow();
 
     void CleanupPlayerSlow()
     {
+        PlayerStruggle = 0f;
         if (_slowedPlayer) _slowedPlayer.SetSpeedMultiplier(1f);
         _slowedPlayer = null;
     }

@@ -20,6 +20,10 @@ namespace Eschropita.Overhaul
         static readonly Color Gold = new Color(1f, 0.84f, 0.45f);
         static readonly Color Mint = new Color(0.55f, 1f, 0.8f);
         static readonly Color Dust = new Color(0.62f, 0.42f, 0.3f, 0.55f);
+        // Footstep dust: a touch darker and more opaque than the ground's own colour so it reads on it.
+        static readonly Color StepDust = new Color(0.5f, 0.3f, 0.2f, 0.8f);
+        static readonly Color StepDustHaze = new Color(0.7f, 0.5f, 0.38f, 0.5f);
+        static readonly Color StepDustGrove = new Color(0.55f, 0.5f, 0.6f, 0.45f);
         static readonly Color Ember = new Color(1f, 0.55f, 0.18f);
         static readonly Color Violet = new Color(0.7f, 0.4f, 1f);
 
@@ -132,8 +136,16 @@ namespace Eschropita.Overhaul
         // ---- player & puzzle -----------------------------------------------------------------------------
         void OnFootstep(Vector3 p, float speed01)
         {
-            if (TripDirector.InGrove) VfxKit.Spores(p + Vector3.up * 0.1f, 1 + (speed01 > 0.5f ? 1 : 0), Color.Lerp(OverhaulPalette.SporeCyan, OverhaulPalette.SporeViolet, Random.value), 0.2f);
-            else VfxKit.Dust(p + Vector3.up * 0.05f, 2 + Mathf.RoundToInt(speed01 * 2f), Dust, 0.28f + 0.15f * speed01, 0.5f + speed01);
+            if (TripDirector.InGrove)
+            {
+                VfxKit.Spores(p + Vector3.up * 0.1f, 2 + (speed01 > 0.5f ? 2 : 0), Color.Lerp(OverhaulPalette.SporeCyan, OverhaulPalette.SporeViolet, Random.value), 0.3f);
+                VfxKit.Dust(p + Vector3.up * 0.05f, 2, StepDustGrove, 0.4f, 0.4f);
+                return;
+            }
+            // A proper puff of red regolith per step: a low, wide kick plus a few bigger, slower clouds that hang
+            // for a moment, dense enough to read against the same-coloured ground.
+            VfxKit.Dust(p + Vector3.up * 0.05f, 4 + Mathf.RoundToInt(speed01 * 3f), StepDust, 0.5f + 0.25f * speed01, 0.9f + 1.2f * speed01);
+            VfxKit.Dust(p + Vector3.up * 0.15f, 2 + Mathf.RoundToInt(speed01 * 2f), StepDustHaze, 0.9f + 0.35f * speed01, 0.35f);
         }
 
         void OnInteracted(Vector3 p)
