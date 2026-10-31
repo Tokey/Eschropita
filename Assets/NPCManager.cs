@@ -189,8 +189,17 @@ public class NPCManager : MonoBehaviour
         return fallback;
     }
 
+    /// <summary>A spot a Mycari may wander to: inside the home (roam) area and outside the grove.</summary>
+    public bool IsRoamPoint(Vector3 p)
+    {
+        if (InGrove(p)) return false;
+        if (!roamArea) return true;
+        var b = roamArea.bounds;
+        return p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z;
+    }
+
     /// <summary>True inside the mushroom grove (its trigger's footprint plus <see cref="groveKeepOut"/>).</summary>
-    bool InGrove(Vector3 p)
+    public bool InGrove(Vector3 p)
     {
         if (!_groveSearched)
         {

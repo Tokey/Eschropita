@@ -32,9 +32,10 @@ public class NPCFlocker : MonoBehaviour
 
 
     [Header("Speeds")]
-    [Tooltip("Pace while milling about at home. 0 keeps them standing still there; a Mycari that is away from " +
-             "home (dismissed, refusing, released by the flow) always walks back at the follow speed first.")]
-    public float roamSpeed = 2.0f;
+    [Tooltip("Pace while wandering about at home (a stroll, slower than following). 0 keeps them standing still " +
+             "there; a Mycari that is away from home (dismissed, refusing, released by the flow) always walks back " +
+             "at the follow speed first.")]
+    public float roamSpeed = 1.1f;
     public float followSpeed = 3.5f;
 
     [Header("Movement Feel")]
@@ -49,7 +50,10 @@ public class NPCFlocker : MonoBehaviour
 
     [Header("Roaming")]
     public float waypointReachDist = 1.0f;
+    [Tooltip("Average rest (s) between two short wander walks at home.")]
     public float retargetRoamEvery = 3.0f;
+    [Tooltip("How far one wander walk goes (m): a random distance in this range, loosely kept with the flock.")]
+    public Vector2 wanderStep = new Vector2(2f, 6f);
 
     [Header("Flocking")]
     public float neighborRadius = 6.0f;
@@ -167,6 +171,10 @@ public class NPCFlocker : MonoBehaviour
     Vector3 _currentRoamTarget;
     float _nextRetargetTime;
     float _retargetJitter;
+    bool _roamWalking;          // on a wander walk (otherwise resting until _roamRestUntil)
+    float _roamRestUntil;
+    bool _headingHome;          // refusing: still on the way back to the home point picked on entry
+    float _headingHomeUntil;
     int _frame;
     int updateOffset;
 
@@ -774,53 +782,28 @@ public class NPCFlocker : MonoBehaviour
 
     // ------------------------------------------------------------------ State behaviours
 
+    /// <summary>
+    /// Wandering about at home: a short stroll to a nearby spot (loosely with the flock, inside the home area,
+    /// never into the grove), a rest, another stroll. A zero roam speed keeps them standing.
+    /// </summary>
     void DoRoam()
     {
         SetAgentSpeed(roamSpeed);
+        if (roamSpeed <= 0.01f || !_agent.isOnNavMesh) return;
 
-        if (Vector3.Distance(transform.position, _currentRoamTarget) <= waypointReachDist ||
-            Time.time >= _nextRetargetTime)
+        if (_roamWalking)
         {
-            PickNewRoamTarget(false);
-        }
-
-        Vector3 desired = (_currentRoamTarget - transform.position);
-        desired.y = 0f;
-        if (desired.sqrMagnitude > 0.001f) desired = desired.normalized * maxSteer;
-
-        Vector3 contain = ComputeContainmentVelocity(1.5f, 0.75f);
-
-        Vector3 flock = Vector3.zero;
-        var mgr = NPCManager.Instance;
-        if (mgr && ((_frame + updateOffset) % mgr.neighborUpdateStride == 0))
-            flock = ComputeFlockingVelocity();
-
-        Vector3 steer = desired * 0.6f + flock * 0.3f + contain * 0.1f;
-
-        if (mgr && mgr.roamArea && !mgr.roamArea.bounds.Contains(transform.position) && contain.sqrMagnitude > 0.0f)
-            steer = contain + desired * 0.25f;
-
-        if (steer.sqrMagnitude < 0.0005f)
-        {
-            if (!_agent.hasPath || _agent.remainingDistance <= waypointReachDist * 0.5f)
-                _agent.SetDestination(_currentRoamTarget);
+            bool arrived = !_agent.pathPending && (!_agent.hasPath || _agent.remainingDistance <= waypointReachDist);
+            if (arrived || Time.time >= _nextRetargetTime)
+            {
+                _roamWalking = false;
+                float rest = Mathf.Max(0.3f, retargetRoamEvery + _retargetJitter);
+                _roamRestUntil = Time.time + Random.Range(rest * 0.4f, rest * 1.4f);
+                _agent.ResetPath();
+            }
             return;
         }
-
-        Vector3 ahead = transform.position + steer.normalized * steerDistance;
-        if (NavMesh.SamplePosition(ahead, out var hit, 2.0f, NavMesh.AllAreas))
-            _agent.SetDestination(hit.position);
-
-        if (mgr && mgr.roamArea && !_agent.pathPending && _agent.hasPath)
-        {
-            Vector3 final = _agent.pathEndPosition;
-            if (!mgr.roamArea.bounds.Contains(final))
-            {
-                Vector3 clamped = BoxClosestPointInside(mgr.roamArea, final);
-                if (NavMesh.SamplePosition(clamped, out var hit2, 2f, NavMesh.AllAreas))
-                    _agent.SetDestination(hit2.position);
-            }
-        }
+        if (Time.time >= _roamRestUntil) PickNewRoamTarget(false);
     }
 
     void DoFollowToDecision()
@@ -966,16 +949,27 @@ public class NPCFlocker : MonoBehaviour
 
     void DoDeclineCooldown()
     {
-        // Red and ignoring the player: on its way home first (keeping the path alive), then milling about there.
-        if (!IsHome())
+        // Red and ignoring the player: all the way back to the home point picked on entry (keeping the path
+        // alive), then milling about there. From the grove that is a proper walk away, not a step off the pads.
+        if (_headingHome)
         {
             if (_agent.isOnNavMesh && !_agent.hasPath && !_agent.pathPending &&
                 NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2f, NavMesh.AllAreas))
                 _agent.SetDestination(hit.position);
+            Vector3 left = _currentRoamTarget - transform.position; left.y = 0f;
+            bool there = left.magnitude <= waypointReachDist + 0.75f ||
+                         (!_agent.pathPending && _agent.hasPath && _agent.remainingDistance <= waypointReachDist + 0.5f);
+            if ((there && IsHome()) || Time.time >= _headingHomeUntil)
+            {
+                _headingHome = false;
+                SetAgentSpeed(roamSpeed);
+                _roamWalking = false;
+                _roamRestUntil = Time.time + Random.Range(0.5f, 1.5f);
+            }
         }
         else DoRoam();
         // Cooled down and home (or long past the cooldown, if home is out of reach): back to normal, blue again.
-        if (Time.time >= _cooldownEnd && (IsHome() || Time.time >= _cooldownEnd + 30f))
+        if (Time.time >= _cooldownEnd && (!_headingHome || Time.time >= _cooldownEnd + 30f))
             RoamHere();
     }
 
@@ -1042,7 +1036,12 @@ public class NPCFlocker : MonoBehaviour
         SetAgentSpeed(followSpeed);
         _currentRoamTarget = NPCManager.Instance ? NPCManager.Instance.GetRandomNavPointInside() : transform.position;
         if (_agent.isOnNavMesh && NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2f, NavMesh.AllAreas))
+        {
+            _currentRoamTarget = hit.position;
             _agent.SetDestination(hit.position);
+        }
+        _headingHome = true;
+        _headingHomeUntil = Time.time + 40f;
     }
 
     /// <summary>Inside the home (roam) area, give or take a metre. True when there is no roam area.</summary>
@@ -1050,6 +1049,7 @@ public class NPCFlocker : MonoBehaviour
     {
         var mgr = NPCManager.Instance;
         if (!mgr || !mgr.roamArea) return true;
+        if (mgr.InGrove(transform.position)) return false;   // the grove sits in the home area but is not home
         var b = mgr.roamArea.bounds;
         b.Expand(new Vector3(2f, 1000f, 2f));
         return b.Contains(transform.position);
@@ -1182,17 +1182,49 @@ public class NPCFlocker : MonoBehaviour
         _agent.velocity = Vector3.zero;
     }
 
+    /// <summary>
+    /// Starts the next wander walk. <paramref name="immediate"/> (spawn, just got home) rests a random moment
+    /// first so the flock doesn't set off in step.
+    /// </summary>
     void PickNewRoamTarget(bool immediate)
     {
-        _currentRoamTarget = NPCManager.Instance
-            ? NPCManager.Instance.GetRandomNavPointInside()
-            : transform.position;
+        if (immediate)
+        {
+            _roamWalking = false;
+            _roamRestUntil = Time.time + Random.Range(0.2f, 2.2f);
+            _currentRoamTarget = transform.position;
+            return;
+        }
 
-        float period = Mathf.Max(0.8f, retargetRoamEvery + _retargetJitter);
-        _nextRetargetTime = Time.time + (immediate ? 0.5f : period);
+        _currentRoamTarget = NearbyRoamPoint();
+        _roamWalking = true;
+        float speed = Mathf.Max(0.3f, roamSpeed);
+        Vector3 d = _currentRoamTarget - transform.position; d.y = 0f;
+        _nextRetargetTime = Time.time + d.magnitude / speed * 2f + 2f;   // give up on a walk that goes nowhere
 
-        if (_agent.isOnNavMesh && NavMesh.SamplePosition(_currentRoamTarget, out var hit, 2.0f, NavMesh.AllAreas))
-            _agent.SetDestination(hit.position);
+        if (_agent.isOnNavMesh) _agent.SetDestination(_currentRoamTarget);
+    }
+
+    /// <summary>A spot a few metres away: random, nudged by the flock (spread out, loosely together), at home.</summary>
+    Vector3 NearbyRoamPoint()
+    {
+        var mgr = NPCManager.Instance;
+        Vector3 here = transform.position;
+        Vector3 flock = ComputeFlockingVelocity() + ComputeContainmentVelocity(2.5f, 1f);
+        flock.y = 0f;
+        float lo = Mathf.Max(0.5f, Mathf.Min(wanderStep.x, wanderStep.y)), hi = Mathf.Max(lo, wanderStep.y);
+
+        for (int i = 0; i < 10; i++)
+        {
+            Vector2 r = Random.insideUnitCircle;
+            if (r.sqrMagnitude < 0.01f) r = Vector2.right;
+            Vector3 dir = new Vector3(r.x, 0f, r.y).normalized + flock * 0.12f;
+            Vector3 p = here + dir.normalized * Random.Range(lo, hi);
+            if (!NavMesh.SamplePosition(p, out var hit, 1.5f, NavMesh.AllAreas)) continue;
+            if (mgr && !mgr.IsRoamPoint(hit.position)) continue;
+            return hit.position;
+        }
+        return mgr ? mgr.GetRandomNavPointInside() : here;
     }
 
     Vector3 ComputeFlockingVelocity()

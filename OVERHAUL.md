@@ -74,9 +74,11 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
 - **Mycari pathing** — the JoyTech dome stood on top of the Mycari's roam area, and its walls cut their NavMesh,
   trapping them. Structures and props now keep clear of the roam area and the walks between landmarks. The dome
   moved behind the home, outside it. Idle Mycari also stay out of the mushroom grove (`NPCManager.groveKeepOut`), so
-  they no longer stand on the singing mushrooms; the widened roam box reached into it. The Mycari prefab's roam speed
-  is 0, which left any Mycari that was dismissed, refusing, released by the story or lost by you frozen on the spot.
-  They now walk home at follow speed first, then stand or roam there.
+  they no longer stand on the singing mushrooms; the widened roam box reached into it. A Mycari that was dismissed,
+  refusing, released by the story or lost by you walks home at follow speed first. The grove no longer counts as
+  home, so a Mycari that gives up on your song walks all the way back instead of standing on the pads.
+- **Wandering Mycari** — at home they stroll (`roamSpeed` 1.1, was 0 = standing still): a short walk of 2–6 m
+  (`wanderStep`), loosely with the flock and never into the grove, then a rest of about 1–4 s (`retargetRoamEvery`).
 - **Level** — Mars wind turbine (spins with windmill health, fungal repair patches, shard-shield plates), visible
   life-support plant with conduits to the dome door, organic glowing grove floor, JoyTech biodome + airlock door,
   Escropita's lander, ruins, surveillance masts, bunker hatch, horizon landmarks. Textures: CC0 Poly Haven

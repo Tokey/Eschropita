@@ -74,7 +74,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   role: 0
   wanderDuration: 15
-  roamSpeed: 0
+  roamSpeed: 1.1
   followSpeed: 3.5
   hopHeight: 0.22
   hopFrequency: 1.3
