@@ -5,7 +5,11 @@
 //     image gently along its front and warming it toward the note's colour
 //   - miss (_TripMiss): a cold horizontal shiver, slices of the image slipping sideways with their colours split,
 //     the frame drained toward grey-violet
-// With all three at zero the image is untouched.
+//   - solved song (_TripSolve): the full trip, with swirl, breathing zoom, a big ring, a kaleidoscope ghost and
+//     rainbow bands
+//   - failed song (_TripFail): the shiver at full force, flickers of negative
+//   - thin air (_TripBlur): the picture blurs in spells
+// With everything at zero the image is untouched.
 Shader "Hidden/Eschropita/TripWarp"
 {
     HLSLINCLUDE
@@ -21,6 +25,9 @@ Shader "Hidden/Eschropita/TripWarp"
     float _TripHit;
     float _TripHitAge;
     float _TripMiss;
+    float _TripSolve;
+    float _TripFail;
+    float _TripBlur;
     float4 _TripPulseCenter;
     float4 _TripTint;
 
@@ -32,6 +39,23 @@ Shader "Hidden/Eschropita/TripWarp"
 
     float Hash(float n) { return frac(sin(n) * 43758.5453); }
 
+    float3 HueRotate(float3 c, float a)
+    {
+        const float3 k = float3(0.57735, 0.57735, 0.57735);
+        float ca = cos(a);
+        return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+    }
+
+    // 13-tap disc blur around uv (radius in UV units).
+    float3 Blurred(float2 uv, float radius)
+    {
+        float3 acc = Src(uv);
+        const float2 taps[12] = { float2(1,0), float2(0.5,0.866), float2(-0.5,0.866), float2(-1,0), float2(-0.5,-0.866), float2(0.5,-0.866),
+                                  float2(0.5,0), float2(0,0.5), float2(-0.5,0), float2(0,-0.5), float2(0.35,0.35), float2(-0.35,-0.35) };
+        [unroll] for (int i = 0; i < 12; i++) acc += Src(uv + taps[i] * radius * float2(_ScreenSize.y * _ScreenSize.z, 1.0));
+        return acc / 13.0;
+    }
+
     float4 Frag(Varyings varyings) : SV_Target
     {
         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(varyings);
@@ -39,17 +63,31 @@ Shader "Hidden/Eschropita/TripWarp"
         float2 uv = varyings.positionCS.xy * _ScreenSize.zw;
         float A = saturate(_TripIntensity);
         float H = saturate(_TripHit);
-        float M = saturate(_TripMiss);
+        float M = saturate(max(_TripMiss, _TripFail));
+        float S = saturate(_TripSolve);
+        float F = saturate(_TripFail);
+        float B = saturate(_TripBlur);
         float t = _TripTime;
         float aspect = _ScreenSize.x * _ScreenSize.w;
 
         float2 c = uv - 0.5;
         c.x *= aspect;
 
+        float r = length(c);
+
         // ---- ambient: a slow, faint liquid sway (a few pixels at most) ----
         float2 w = c;
         float2 wave = float2(sin(uv.y * 7.0 + t * 0.9), cos(uv.x * 6.0 - t * 0.8));
-        w += wave * 0.0022 * A;
+        w += wave * (0.0035 * A + 0.012 * S);
+
+        // ---- solved: swirl and breathing zoom, strongest in the middle ----
+        if (S > 0.001)
+        {
+            float swirl = S * 0.55 * sin(_TripTime * 0.8) * (1.0 - smoothstep(0.0, 0.95, r));
+            float sw = sin(swirl), cw = cos(swirl);
+            w = float2(w.x * cw - w.y * sw, w.x * sw + w.y * cw);
+            w *= 1.0 + S * 0.045 * sin(_TripTime * 2.2 + r * 7.0);
+        }
 
         // ---- hit: one ring of light rolling out from the pad ----
         float2 pc = _TripPulseCenter.xy - 0.5;
@@ -58,7 +96,7 @@ Shader "Hidden/Eschropita/TripWarp"
         float pd = length(toP);
         float front = _TripHitAge * 0.75;                       // ring radius, in screen heights
         float ring = exp(-pow((pd - front) / 0.06, 2.0));       // soft band around the front
-        float bend = H * ring * 0.012;
+        float bend = (H * 0.012 + S * 0.03) * ring;
         w += (toP / max(pd, 1e-4)) * bend;
 
         float2 wuv = float2(w.x / aspect, w.y) + 0.5;
@@ -69,30 +107,58 @@ Shader "Hidden/Eschropita/TripWarp"
         {
             float band = floor(uv.y * 26.0);
             float tick = floor(_TripTime * 18.0);
-            float r = Hash(band * 13.7 + tick * 3.1);
-            slip = (r - 0.5) * 0.045 * M * step(0.55, Hash(band * 7.3 + tick));   // only some slices move
+            float rnd = Hash(band * 13.7 + tick * 3.1);
+            slip = (rnd - 0.5) * (0.045 * M + 0.07 * F) * step(0.55 - 0.25 * F, Hash(band * 7.3 + tick));   // only some slices move
             wuv.x += slip;
         }
-        float split = 0.0025 * A + 0.0045 * H * ring + 0.012 * M;
+        float split = 0.0035 * A + 0.0045 * H * ring + 0.012 * M + 0.02 * F + 0.008 * S;
         float3 col;
-        col.r = Src(wuv + float2(split, 0.0)).r;
-        col.g = Src(wuv).g;
-        col.b = Src(wuv - float2(split, 0.0)).b;
+        if (B > 0.01)
+        {
+            // thin air: the whole picture softens, colours smeared a little apart
+            float rad = 0.012 * B;
+            col.r = Blurred(wuv + float2(split, 0.0), rad).r;
+            col.g = Blurred(wuv, rad).g;
+            col.b = Blurred(wuv - float2(split, 0.0), rad).b;
+        }
+        else
+        {
+            col.r = Src(wuv + float2(split, 0.0)).r;
+            col.g = Src(wuv).g;
+            col.b = Src(wuv - float2(split, 0.0)).b;
+        }
+
+        // solved: a six-fold kaleidoscope ghost over the picture
+        if (S > 0.001)
+        {
+            float ang = atan2(c.y, c.x) + _TripTime * 0.08;
+            const float seg = 6.2831853 / 6.0;
+            ang = abs(fmod(ang + 100.0 * seg, seg) - seg * 0.5);
+            float2 kc = float2(cos(ang), sin(ang)) * r * (1.0 + 0.08 * sin(_TripTime * 0.6));
+            float2 kuv = float2(kc.x / aspect, kc.y) + 0.5;
+            float3 k = HueRotate(Src(kuv), 2.1 + _TripTime * 0.4);
+            col = lerp(col, max(col, k), 0.45 * S);
+        }
 
         // ---- colour ----
         float luma = dot(col, float3(0.2126, 0.7152, 0.0722));
-        // ambient: the faintest iridescent sheen
+        // ambient: a faint iridescent sheen; solved: rainbow bands rolling through the light
         float3 iri = 0.5 + 0.5 * cos(6.2831853 * (float3(0.0, 0.33, 0.67) + luma * 1.2 + t * 0.05));
-        col = lerp(col, col * (0.85 + 0.3 * iri), 0.12 * A);
+        col = lerp(col, col * (0.85 + 0.3 * iri), 0.2 * A);
+        float bands = sin(luma * 16.0 - _TripTime * 3.0) * 0.5 + 0.5;
+        col = lerp(col, col * (0.6 + 0.9 * iri), 0.55 * S * bands);
+        col = HueRotate(col, S * 1.2 * sin(_TripTime * 1.1));
         // hit: the ring glows in the note's colour, and the whole frame warms a touch
         float3 warm = lerp(float3(1.0, 0.85, 0.6), _TripTint.rgb, 0.5);
         col += warm * ring * H * 0.22 * (0.4 + luma);
         col = lerp(col, col * warm * 1.15, 0.12 * H);
-        // miss: drain toward a cold grey-violet
-        col = lerp(col, float3(luma * 0.9, luma * 0.85, luma * 1.08), 0.45 * M);
+        // miss: drain toward a cold grey-violet; failed: nearly grey, with flickers of negative
+        col = lerp(col, float3(luma * 0.9, luma * 0.85, luma * 1.08), 0.45 * M + 0.35 * F);
+        float flick = step(0.82, Hash(floor(_TripTime * 14.0) * 1.7)) * F;
+        col = lerp(col, saturate(1.0 - col), 0.45 * flick);
 
         float3 orig = Src(uv);
-        float amount = saturate(A * 1.5 + H + M);
+        float amount = saturate(A * 1.5 + H + M + S + F + B);
         return float4(lerp(orig, max(col, 0.0), amount), 1.0);
     }
 

@@ -52,7 +52,8 @@ namespace Eschropita.Overhaul
             }
 
             float I = TripDirector.Intensity;
-            float hit = TripDirector.HitPulse, miss = TripDirector.MissPulse;
+            float hit = Mathf.Max(TripDirector.HitPulse, TripDirector.SolvePeak), miss = Mathf.Max(TripDirector.MissPulse, TripDirector.FailPeak);
+            float blur = TripDirector.Blur;
             float deep = TripDirector.InGrove ? Mathf.Clamp01((I - 0.45f) / 0.55f) : 0f;
             float t = TripDirector.Clock;
             bool song = TripDirector.SongActive;
@@ -86,13 +87,13 @@ namespace Eschropita.Overhaul
 
             if (_lowpass != null)
             {
-                bool on = deep > 0.01f;
+                bool on = deep > 0.01f || blur > 0.01f;
                 if (_lowpass.enabled != on) _lowpass.enabled = on;
                 if (on)
                 {
                     float sweep = 2800f + 7500f * (0.5f + 0.5f * Mathf.Sin(t * 0.21f));
                     if (song) sweep = Mathf.Max(sweep, 7000f);   // the melody must stay clear
-                    _lowpass.cutoffFrequency = Mathf.Lerp(22000f, sweep, deep * 0.85f);
+                    _lowpass.cutoffFrequency = Mathf.Min(Mathf.Lerp(22000f, sweep, deep * 0.85f), Mathf.Lerp(22000f, 900f, blur));   // a blur spell muffles the world too
                     _lowpass.lowpassResonanceQ = 1f + 0.7f * deep;
                 }
             }

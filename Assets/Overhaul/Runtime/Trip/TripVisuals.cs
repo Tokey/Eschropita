@@ -15,6 +15,12 @@ namespace Eschropita.Overhaul
     ///    toward the note, a gentle outward "breath", and a ring of light rolling out from the pad (warp pass).
     ///  - Miss (wrong mushroom): cold and dissonant, with draining colour, magenta/cyan split toning, hard colour
     ///    fringes, a pinch, a dark violet vignette, a horizontal shiver (warp pass) and a short camera shake.
+    ///  - Solved song: the full trip for a few seconds, with spinning rainbow hues, a flood of bloom, breathing
+    ///    lens, swirl and kaleidoscope (warp pass), and a slow camera roll.
+    ///  - Failed song: the sour version, with colour drained to near grey, violent fringes and slices tearing
+    ///    sideways, flickers of negative, a crushing vignette and a hard shake.
+    ///  - Thin air (low life support): more trip, a dark tunnel at the edges, sight blurring in spells, and a
+    ///    slow, heavy camera sway (unlike the quick shakes above).
     /// Stock HDRP overrides on a high-priority volume, plus a fullscreen pass ("Hidden/Eschropita/TripWarp") that
     /// switches itself off if the shader is unavailable.
     /// </summary>
@@ -47,6 +53,9 @@ namespace Eschropita.Overhaul
         static readonly int IdMiss = Shader.PropertyToID("_TripMiss");
         static readonly int IdPulseCenter = Shader.PropertyToID("_TripPulseCenter");
         static readonly int IdTint = Shader.PropertyToID("_TripTint");
+        static readonly int IdSolve = Shader.PropertyToID("_TripSolve");
+        static readonly int IdFail = Shader.PropertyToID("_TripFail");
+        static readonly int IdBlur = Shader.PropertyToID("_TripBlur");
 
         void Start()
         {
@@ -133,17 +142,20 @@ namespace Eschropita.Overhaul
             // ease the flashes so they rise sharply and settle softly
             float h = hit * hit * (3f - 2f * hit);
             float m = miss * miss * (3f - 2f * miss);
-            float a = Mathf.Clamp01(amb * 0.6f);          // the ambient look never goes past a gentle wash
+            float a = Mathf.Clamp01(amb * 0.8f);          // the ambient look stays a wash
+            float sp = TripDirector.SolvePeak, fp = TripDirector.FailPeak;
+            float S = Mathf.Sqrt(sp), F = Mathf.Sqrt(fp);  // stay near full strength, then fall away
+            float x = TripDirector.Hypoxia, blur = TripDirector.Blur;
 
             if (_volume != null)
             {
-                _volume.weight = Mathf.Clamp01(Mathf.Max(a, Mathf.Max(h, m)));
-                if (_volume.weight > 0.001f) Animate(a, h, m, t, tint);
+                _volume.weight = Mathf.Clamp01(Mathf.Max(Mathf.Max(a, Mathf.Max(h, m)), Mathf.Max(Mathf.Max(S, F), x * 0.8f)));
+                if (_volume.weight > 0.001f) Animate(a, h, m, S, F, x, blur, t, tint);
             }
 
             if (_passVolume != null && _warp != null)
             {
-                bool on = amb > 0.02f || hit > 0.01f || miss > 0.01f;
+                bool on = amb > 0.02f || hit > 0.01f || miss > 0.01f || sp > 0.01f || fp > 0.01f || blur > 0.01f;
                 if (_passVolume.enabled != on) _passVolume.enabled = on;
                 if (on)
                 {
@@ -153,6 +165,9 @@ namespace Eschropita.Overhaul
                     _warp.SetFloat(IdHitAge, TripDirector.HitAge);
                     _warp.SetFloat(IdMiss, miss);
                     _warp.SetColor(IdTint, tint);
+                    _warp.SetFloat(IdSolve, S);
+                    _warp.SetFloat(IdFail, F);
+                    _warp.SetFloat(IdBlur, blur);
                     var cam = Camera.main;
                     Vector2 c = new Vector2(0.5f, 0.5f);
                     if (cam != null)
@@ -166,55 +181,76 @@ namespace Eschropita.Overhaul
         }
 
         /// <summary>
-        /// Every override is a weighted mix of the three looks (weights a, h, m); the volume weight sets how far
-        /// the frame moves from the scene's own grade toward that mix.
+        /// Every override is a weighted mix of the looks (ambient a, hit h, miss m, solved S, failed F, thin air x);
+        /// the volume weight sets how far the frame moves from the scene's own grade toward that mix.
         /// </summary>
-        void Animate(float a, float h, float m, float t, Color tint)
+        void Animate(float a, float h, float m, float S, float F, float x, float blur, float t, Color tint)
         {
-            float sum = Mathf.Max(1e-4f, a + h + m);
-            float A = a / sum, H = h / sum, M = m / sum;
-            float jitter = Mathf.Sin(t * 37f) * 0.6f + Mathf.Sin(t * 53f + 1.3f) * 0.4f;   // fast, irregular (miss only)
+            float sum = Mathf.Max(1e-4f, a + h + m + S + F + x);
+            float A = a / sum, H = h / sum, M = m / sum, Sw = S / sum, Fw = F / sum, X = x / sum;
+            float jitter = Mathf.Sin(t * 37f) * 0.6f + Mathf.Sin(t * 53f + 1.3f) * 0.4f;   // fast, irregular (miss / fail)
+            float ut = Time.unscaledTime;
             Color warm = Color.Lerp(new Color(1f, 0.86f, 0.62f), tint, 0.45f);
+            Color rainbow = Color.HSVToRGB(Mathf.Repeat(ut * 0.35f, 1f), 0.7f, 1f);
 
-            _color.hueShift.Override(A * 10f * Mathf.Sin(t * 0.13f) + M * 14f * jitter);
-            _color.saturation.Override(A * 16f + H * 32f - M * 45f);
-            _color.contrast.Override(A * 3f + H * 6f + M * 26f);
-            _color.postExposure.Override(H * 0.32f - M * 0.22f);
-            _color.colorFilter.Override(Color.white * A + Color.Lerp(Color.white, warm, 0.35f) * H + new Color(0.82f, 0.86f, 1f) * M);
+            _color.hueShift.Override(A * 14f * Mathf.Sin(t * 0.13f) + M * 14f * jitter + Sw * 180f * Mathf.Sin(ut * 1.3f)
+                                     + Fw * 30f * jitter + X * 25f * Mathf.Sin(ut * 0.31f));
+            _color.saturation.Override(A * 22f + H * 32f - M * 45f + Sw * 75f - Fw * 85f - X * 15f);
+            _color.contrast.Override(A * 4f + H * 6f + M * 26f + Sw * 15f + Fw * 45f + X * 10f);
+            _color.postExposure.Override(H * 0.32f - M * 0.22f + Sw * 0.35f * (0.6f + 0.4f * Mathf.Sin(ut * 4f)) - Fw * 0.45f - X * 0.25f);
+            _color.colorFilter.Override(Color.white * A + Color.Lerp(Color.white, warm, 0.35f) * H + new Color(0.82f, 0.86f, 1f) * M
+                                        + Color.Lerp(Color.white, rainbow, 0.35f) * Sw + new Color(0.9f, 0.62f, 0.7f) * Fw
+                                        + new Color(1f, 0.8f, 0.68f) * X);
 
-            _chroma.intensity.Override(Mathf.Clamp01(A * 0.08f + H * 0.12f + M * 0.9f));
+            _chroma.intensity.Override(Mathf.Clamp01(A * 0.12f + H * 0.12f + M * 0.9f + Sw * 0.7f + Fw + X * 0.35f));
 
-            _lens.intensity.Override(H * 0.16f - M * (0.24f + 0.06f * jitter));
+            _lens.intensity.Override(H * 0.16f - M * (0.24f + 0.06f * jitter) + Sw * 0.35f * Mathf.Sin(ut * 2.6f)
+                                     - Fw * (0.45f + 0.12f * jitter) + X * 0.12f * Mathf.Sin(ut * 0.5f));
             _lens.xMultiplier.Override(1f);
             _lens.yMultiplier.Override(1f);
-            _lens.center.Override(new Vector2(0.5f + M * 0.02f * jitter, 0.5f));
-            _lens.scale.Override(1f - H * 0.04f);
+            _lens.center.Override(new Vector2(0.5f + (M + Fw) * 0.025f * jitter, 0.5f));
+            _lens.scale.Override(1f - H * 0.04f - Sw * 0.06f);
 
-            _bloom.intensity.Override(Mathf.Clamp01(A * 0.18f + H * 0.65f + M * 0.12f));
-            _bloom.tint.Override(Color.white * A + warm * H + new Color(0.7f, 0.8f, 1f) * M);
+            _bloom.intensity.Override(Mathf.Clamp01(A * 0.22f + H * 0.65f + M * 0.12f + Sw + Fw * 0.15f + X * 0.3f));
+            _bloom.tint.Override(Color.white * A + warm * H + new Color(0.7f, 0.8f, 1f) * M + rainbow * Sw
+                                 + new Color(1f, 0.4f, 0.45f) * Fw + new Color(1f, 0.75f, 0.6f) * X);
 
-            _vignette.color.Override(Color.black * A + new Color(0.35f, 0.22f, 0.05f) * H + new Color(0.22f, 0.02f, 0.3f) * M);
-            _vignette.intensity.Override(Mathf.Clamp01(A * 0.12f + H * 0.1f + M * 0.45f));
+            _vignette.color.Override(Color.black * A + new Color(0.35f, 0.22f, 0.05f) * H + new Color(0.22f, 0.02f, 0.3f) * M
+                                     + Color.HSVToRGB(Mathf.Repeat(ut * 0.35f + 0.5f, 1f), 0.8f, 0.45f) * Sw
+                                     + new Color(0.3f, 0f, 0.05f) * Fw + new Color(0.12f, 0.03f, 0.02f) * X);
+            _vignette.intensity.Override(Mathf.Clamp01(A * 0.14f + H * 0.1f + M * 0.45f + Sw * 0.3f + Fw * 0.7f
+                                                       + X * (0.38f + 0.25f * blur)));
             _vignette.center.Override(new Vector2(0.5f, 0.5f));
 
-            _white.temperature.Override(A * 6f * Mathf.Sin(t * 0.19f) + H * 14f - M * 32f);
-            _white.tint.Override(A * 6f * Mathf.Sin(t * 0.23f + 1.3f) + M * 22f);
+            _white.temperature.Override(A * 8f * Mathf.Sin(t * 0.19f) + H * 14f - M * 32f + Sw * 40f * Mathf.Sin(ut * 0.9f) - Fw * 40f + X * 18f);
+            _white.tint.Override(A * 8f * Mathf.Sin(t * 0.23f + 1.3f) + M * 22f + Sw * 40f * Mathf.Cos(ut * 1.1f) + Fw * 30f);
 
             Color neutral = new Color(0.5f, 0.5f, 0.5f);   // grey = no toning
-            _split.shadows.Override(neutral * (A + H) + new Color(0.62f, 0.25f, 0.7f) * M);
-            _split.highlights.Override(neutral * A + Color.Lerp(neutral, new Color(0.75f, 0.62f, 0.4f), 0.6f) * H + new Color(0.3f, 0.75f, 0.78f) * M);
+            Color hs = Color.HSVToRGB(Mathf.Repeat(ut * 0.2f, 1f), 0.6f, 0.45f);
+            _split.shadows.Override(neutral * (A + H + X) + new Color(0.62f, 0.25f, 0.7f) * M + hs * Sw + new Color(0.55f, 0.1f, 0.2f) * Fw);
+            _split.highlights.Override(neutral * (A + X) + Color.Lerp(neutral, new Color(0.75f, 0.62f, 0.4f), 0.6f) * H
+                                       + new Color(0.3f, 0.75f, 0.78f) * M + Color.HSVToRGB(Mathf.Repeat(ut * 0.2f + 0.5f, 1f), 0.6f, 0.7f) * Sw
+                                       + new Color(0.35f, 0.8f, 0.75f) * Fw);
             _split.balance.Override(0f);
         }
 
-        // A wrong note shakes the camera a little (a short, decaying roll); nothing else moves the camera.
+        // Camera: a wrong note shakes it a little and a failed song shakes it hard (quick and irregular); a solved
+        // song rolls it slowly like the old full trip; thin air makes it sway heavily, like losing balance.
         void OnCameraUpdated(CinemachineBrain brain)
         {
-            float miss = TripDirector.MissPulse;
-            if (brain == null || miss <= 0.001f) return;
+            float miss = TripDirector.MissPulse, fail = TripDirector.FailPeak, solve = TripDirector.SolvePeak, x = TripDirector.Hypoxia;
+            if (brain == null || (miss <= 0.001f && fail <= 0.001f && solve <= 0.001f && x <= 0.001f)) return;
             var cam = brain.OutputCamera;
             if (cam == null) return;
             float t = Time.unscaledTime;
-            float roll = missShakeDegrees * miss * miss * (Mathf.Sin(t * 41f) * 0.7f + Mathf.Sin(t * 67f + 2f) * 0.3f);
+            float shake = Mathf.Sin(t * 41f) * 0.7f + Mathf.Sin(t * 67f + 2f) * 0.3f;
+            float roll = missShakeDegrees * miss * miss * shake
+                       + 3.5f * fail * fail * (Mathf.Sin(t * 29f + 0.7f) * 0.6f + Mathf.Sin(t * 47f) * 0.4f)
+                       + 4f * Mathf.Sqrt(solve) * Mathf.Sin(t * 0.9f)
+                       + 2.6f * x * (Mathf.Sin(t * 0.27f) * 0.7f + Mathf.Sin(t * 0.61f + 1.1f) * 0.3f);
+            // thin air also lets the view droop and drift a little, slowly
+            Vector3 drift = new Vector3(Mathf.Sin(t * 0.19f), -0.6f - 0.4f * Mathf.Sin(t * 0.33f), 0f) * (0.25f * x);
+            cam.transform.position += cam.transform.rotation * drift;
             cam.transform.rotation = cam.transform.rotation * Quaternion.AngleAxis(roll, Vector3.forward);
         }
     }

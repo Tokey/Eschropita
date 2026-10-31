@@ -32,6 +32,14 @@ namespace Eschropita.Overhaul
         public static float MissPulse => Instance != null ? Instance._miss * Instance._userScale : 0f;
         /// <summary>Seconds since the last hit (drives the ring of light spreading from the pad).</summary>
         public static float HitAge => Instance != null ? Time.unscaledTime - Instance._hitAt : 99f;
+        /// <summary>0..1 the full-blown trip when a song is solved (a few seconds, fading).</summary>
+        public static float SolvePeak => Instance != null ? Instance._solvePeak * Instance._userScale : 0f;
+        /// <summary>0..1 the violent, sour version when a song fails.</summary>
+        public static float FailPeak => Instance != null ? Instance._failPeak * Instance._userScale : 0f;
+        /// <summary>0..1 how starved of oxygen the player is (life support under about a third).</summary>
+        public static float Hypoxia => Instance != null ? Instance._hypoxia * Instance._userScale : 0f;
+        /// <summary>0..1 a passing blur, as if Mars were claiming the eyesight (comes in spells while hypoxic).</summary>
+        public static float Blur => Instance != null ? Instance._blur * Instance._userScale : 0f;
         /// <summary>Trip clock: advances faster the deeper the trip (drives every oscillation so they stay in sync).</summary>
         public static float Clock => Instance != null ? Instance._clock : 0f;
         /// <summary>True while the player is inside the grove (intense level).</summary>
@@ -50,13 +58,13 @@ namespace Eschropita.Overhaul
         [Header("Mycari proximity (faint)")]
         public float mycariFullDistance = 1.8f;
         public float mycariStartDistance = 9f;
-        public float mycariMaxIntensity = 0.12f;
-        public float extraMycariBonus = 0.02f;
-        public float mycariCap = 0.16f;
+        public float mycariMaxIntensity = 0.2f;
+        public float extraMycariBonus = 0.03f;
+        public float mycariCap = 0.26f;
 
         [Header("Mushroom grove (a little more)")]
-        public float groveIntensity = 0.25f;
-        public float groveApproachIntensity = 0.12f;
+        public float groveIntensity = 0.4f;
+        public float groveApproachIntensity = 0.2f;
         public float groveApproachDistance = 7f;
 
         [Header("Song flashes")]
@@ -66,6 +74,16 @@ namespace Eschropita.Overhaul
         public float solvedSeconds = 2.4f;
         [Tooltip("Seconds a wrong note's shiver takes to fade.")]
         public float missSeconds = 0.85f;
+        [Tooltip("Seconds the full-blown trip lasts after a solved song.")]
+        public float solvePeakSeconds = 4.5f;
+        [Tooltip("Seconds the sour, violent trip lasts after a failed song.")]
+        public float failPeakSeconds = 2.8f;
+
+        [Header("Low oxygen")]
+        [Tooltip("Below this life support (0-1) the air gets thin: the trip rises, sight blurs in spells, the camera sways.")]
+        [Range(0f, 1f)] public float hypoxiaBelow = 0.35f;
+        [Tooltip("Ambient trip added at empty life support.")]
+        public float hypoxiaTrip = 0.45f;
 
         [Header("Focus while doing the mushroom puzzle")]
         [Tooltip("How much the trip settles while the mushrooms sing and you answer them (0 = unchanged, 1 = gone). " +
@@ -92,6 +110,7 @@ namespace Eschropita.Overhaul
 
         float _intensity, _raw, _clock, _userScale = 1f, _focus, _groveNear;
         float _hit, _miss, _hitFade = 1f, _hitAt = -99f;
+        float _solvePeak, _failPeak, _hypoxia, _blur, _blurTarget, _nextBlur, _blurEnd;
         bool _inGrove, _songActive;
         Color _tint = Color.white;
         Color _noteTint = OverhaulPalette.SporeCyan;
@@ -129,6 +148,7 @@ namespace Eschropita.Overhaul
             GameSignals.PadSang += OnPadSang;
             GameSignals.PadPressed += OnPadPressed;
             GameSignals.PuzzleSolved += OnSolved;
+            GameSignals.PuzzleFailed += OnFailed;
             GameSignals.MycariRecruited += OnRecruited;
             // Mycari you have sung with trust you: they accept any command (the role table only applies to strangers).
             OverhaulHooks.AcceptOverride = SungWithTrust;
@@ -139,6 +159,7 @@ namespace Eschropita.Overhaul
             GameSignals.PadSang -= OnPadSang;
             GameSignals.PadPressed -= OnPadPressed;
             GameSignals.PuzzleSolved -= OnSolved;
+            GameSignals.PuzzleFailed -= OnFailed;
             GameSignals.MycariRecruited -= OnRecruited;
             if (OverhaulHooks.AcceptOverride == SungWithTrust) OverhaulHooks.AcceptOverride = null;
         }
@@ -157,7 +178,8 @@ namespace Eschropita.Overhaul
             if (ok) { _noteTint = NoteColor(pad); Hit(0.7f, pos, hitSeconds); }
             else Miss(pos);
         }
-        void OnSolved(Vector3 pos) => Hit(1f, pos, solvedSeconds);
+        void OnSolved(Vector3 pos) { Hit(1f, pos, solvedSeconds); _solvePeak = 1f; _failPeak = 0f; }
+        void OnFailed(Vector3 pos) { Miss(pos); _failPeak = 1f; _solvePeak = 0f; }
         void OnRecruited(NPCFlocker n) { if (n != null) Hit(0.25f, n.transform.position, hitSeconds); }
 
         void Hit(float amount, Vector3 at, float seconds)
@@ -275,11 +297,15 @@ namespace Eschropita.Overhaul
             float focusSeconds = Mathf.Max(0.05f, focusTarget > _focus ? settleSeconds : bloomBackSeconds);
             _focus = Mathf.Lerp(_focus, focusTarget, 1f - Mathf.Exp(-dt * 3f / focusSeconds));
 
+            target = Mathf.Clamp01(target + _hypoxia * hypoxiaTrip);   // thin air (UpdateHypoxia, last frame's value)
             float rate = target > _raw ? riseRate : fallRate;
             _raw = Mathf.MoveTowards(_raw, target, rate * dt);
             float udt = Time.unscaledDeltaTime;   // flashes keep their timing through hit-stops
             _hit = Mathf.MoveTowards(_hit, 0f, udt / _hitFade);
             _miss = Mathf.MoveTowards(_miss, 0f, udt / Mathf.Max(0.1f, missSeconds));
+            _solvePeak = Mathf.MoveTowards(_solvePeak, 0f, udt / Mathf.Max(0.1f, solvePeakSeconds));
+            _failPeak = Mathf.MoveTowards(_failPeak, 0f, udt / Mathf.Max(0.1f, failPeakSeconds));
+            UpdateHypoxia(udt);
             _intensity = Mathf.Clamp01(_raw * (1f - _focus) * _userScale);
             _clock += dt * (0.35f + 1.1f * _intensity);
 
@@ -289,6 +315,31 @@ namespace Eschropita.Overhaul
             else if (_inGrove) want = _noteTint;
             else want = Color.HSVToRGB(Mathf.Repeat(_clock * 0.03f, 1f), 0.55f, 1f);
             _tint = Color.Lerp(_tint, want, 1f - Mathf.Exp(-dt * 2f));
+        }
+
+        /// <summary>Thin air: below hypoxiaBelow the trip rises and the eyesight blurs in spells, more often the lower it gets.</summary>
+        void UpdateHypoxia(float dt)
+        {
+            var life = LifeSupport.Instance;
+            var gfm = GameFlowManager.Instance;
+            bool live = life != null && life.Active && (gfm == null || gfm.PlayerControlEnabled);
+            float want = live ? Mathf.Clamp01((hypoxiaBelow - life.Value01) / Mathf.Max(0.01f, hypoxiaBelow)) : 0f;
+            _hypoxia = Mathf.MoveTowards(_hypoxia, want, dt * 0.25f);
+
+            float now = Time.unscaledTime;
+            if (_hypoxia > 0.05f)
+            {
+                if (now >= _nextBlur)
+                {
+                    float gap = Mathf.Lerp(14f, 4.5f, _hypoxia);
+                    _blurEnd = now + Random.Range(1.2f, 2.4f) + 1.5f * _hypoxia;
+                    _nextBlur = _blurEnd + gap * Random.Range(0.7f, 1.3f);
+                    _blurTarget = Mathf.Lerp(0.45f, 1f, _hypoxia);
+                }
+                if (now > _blurEnd) _blurTarget = 0f;
+            }
+            else { _blurTarget = 0f; _nextBlur = now + 3f; }
+            _blur = Mathf.MoveTowards(_blur, _blurTarget, dt * (_blurTarget > _blur ? 0.9f : 0.6f));
         }
 
         void UpdateAttunement(NPCFlocker nearest, float dist, float dt)
