@@ -51,7 +51,8 @@ the stone tile in the mushroom grove, the Mycari home box) are only hidden while
   Poor endings), animated life-support gauge, objective banner, light paths revealed by the first song.
 - **Winning Mycari over** (game code: `Assets/GameFlow/MycariPersuasion.cs`) — in the sandbox, asking a Mycari (E)
   sends it to the mushroom grove. Meet it there and it sings its melody on the mushrooms. Sing it back and it listens:
-  it follows you and takes any order. A wrong note and it turns red, wanders home, and won't hear you out for 20 s.
+  it follows you and takes any order. A wrong note replays the melody, as in the tutorial. After three misses
+  (`triesPerSong`) it turns red, wanders home, and won't hear you out for 20 s.
   **One song buys one job**: once a Mycari has been sent to work it needs a new song next time. If it lost you before
   getting an order, it still remembers. (`rememberSong` makes it remember for good.) One song at a time. Melodies are
   4 notes (Breakers 5), plus one after every two Mycari won (capped at +1, since you only get one go), and minus one

@@ -7,8 +7,9 @@ using UnityEngine.AI;
 /// The step between asking a Mycari and giving it orders (sandbox):
 ///  1. Ask (E): it agrees to hear you out and walks to the mushroom grove.
 ///  2. Meet it there: it sings you its melody, walking the mushrooms.
-///  3. Sing it back. Right: it listens, follows you and takes any order. A wrong note: it loses interest, turns
-///     red and wanders home, and won't hear you out again for a little while.
+///  3. Sing it back. Right: it listens, follows you and takes any order. A wrong note: the mushrooms sing it again
+///     and you try once more, as in the tutorial; after triesPerSong misses it loses interest, turns red and
+///     wanders home, and won't hear you out again for a little while.
 /// One song buys one job: a Mycari that lost track of you before you gave it an order still remembers and follows
 /// again when asked, but once it has been sent to work it needs a new song next time.
 /// One song at a time. Melodies grow with each Mycari won over (Breakers are harder to impress) and ease off
@@ -25,9 +26,12 @@ public class MycariPersuasion : MonoBehaviour
     [Min(0)] public int breakerExtra = 1;
     [Tooltip("One more note after this many Mycari won over, up to maxExtra.")]
     [Min(1)] public int winsPerStep = 2;
-    [Tooltip("At most this many extra notes from progress: Fixers top out at 5, Breakers at 6 (one go, so longer " +
-             "melodies turned into coin flips).")]
+    [Tooltip("At most this many extra notes from progress: Fixers top out at 5, Breakers at 6.")]
     [Min(0)] public int maxExtra = 1;
+
+    [Header("Tries")]
+    [Tooltip("Attempts at one song: a wrong note replays the melody until this many misses, then the Mycari leaves.")]
+    [Min(1)] public int triesPerSong = 3;
 
     [Header("Timing")]
     [Tooltip("How long the Mycari waits at the grove for you before wandering home.")]
@@ -209,7 +213,7 @@ public class MycariPersuasion : MonoBehaviour
         int len = MelodyLength(n);
         _puzzle.ResetPuzzle();
         _puzzle.SetSequenceLength(len, len);
-        _puzzle.replayAfterWrong = false;   // one go
+        _puzzle.replayAfterWrong = true;    // a miss replays the melody, until the last try
         SetObjective($"Watch its melody ({len} notes)");
         bool demoDone = false;
         _puzzle.StartDemo(n, () => demoDone = true);
@@ -219,18 +223,34 @@ public class MycariPersuasion : MonoBehaviour
             yield return null;
         }
 
-        // 4) Your turn.
+        // 4) Your turn: up to triesPerSong attempts. After a miss the puzzle flashes red and replays the melody
+        //    on the mushrooms by itself; on the last miss it doesn't, and the Mycari leaves.
         _solved = _missed = false;
-        SetObjective("Sing it back: walk up to each mushroom and press E");
+        int tries = Mathf.Max(1, triesPerSong), missed = 0;
+        SetObjective(TryLine(1, tries));
         _puzzle.BeginPlayerAttempt();
-        while (!_solved && !_missed)
+        while (!_solved)
         {
             if (n == null || Abandoned()) { Cancel(true, "You walked away from its song."); yield break; }
+            if (_missed)
+            {
+                _missed = false;
+                missed++;
+                if (missed >= tries)
+                {
+                    _puzzle.replayAfterWrong = false;   // the feedback routine now running ends without a replay
+                    break;
+                }
+                int left = tries - missed;
+                Toast(left == 1 ? "Not quite. It sings it once more: last try." : $"Not quite. Listen again: {left} tries left.", 2.6f);
+                SetObjective(TryLine(missed + 1, tries));
+            }
             yield return null;
         }
 
         if (_solved)
         {
+            _missed = false;
             _wins++;
             _missStreak = 0;
             _won.Add(n);
@@ -246,11 +266,11 @@ public class MycariPersuasion : MonoBehaviour
             yield break;
         }
 
-        // A wrong note: let the red feedback play out, then it leaves.
+        // Out of tries: let the red feedback play out, then it leaves.
         _missStreak++;
         yield return new WaitForSeconds(1.6f);
         _refuseUntil[n] = Time.time + refuseSeconds;
-        Cancel(true, "A wrong note. It loses interest and wanders home.");
+        Cancel(true, "Out of tries. It loses interest and wanders home.");
     }
 
     /// <summary>Ends the session: the pads go idle, the Mycari (if any) turns away home.</summary>
@@ -279,6 +299,10 @@ public class MycariPersuasion : MonoBehaviour
         _solved = _missed = false;
         SetObjective(null);
     }
+
+    static string TryLine(int attempt, int tries) =>
+        tries <= 1 ? "Sing it back: walk up to each mushroom and press E"
+                   : $"Sing it back: walk up to each mushroom and press E (try {attempt} of {tries})";
 
     int MelodyLength(NPCFlocker n)
     {
