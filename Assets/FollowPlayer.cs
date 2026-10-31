@@ -32,6 +32,9 @@ public class FollowPlayer : MonoBehaviour
 
     [Header("Scan")]
     public float scanRadius = 8f;
+    [Tooltip("Every Mycari within this distance of the player is identified, whatever the physics sphere around " +
+             "Daffodil caught (she trails behind the player, and 8 m is small next to what is on screen).")]
+    public float mycariScanRadius = 14f;
     [Tooltip("How often (seconds) the scan 'pulse' happens while holding V")]
     public float scanPulseInterval = 0.2f;
     public LayerMask scanMask = ~0;
@@ -311,6 +314,24 @@ public class FollowPlayer : MonoBehaviour
                 {
                     _hits.Add(MakeSiteHit(site));
                 }
+            }
+        }
+
+        // Mycari straight from the manager's list, around the player: a Mycari is never missed because its collider
+        // sat just outside the sphere around Daffodil, or behind her.
+        var mgr = NPCManager.Instance;
+        if (mgr != null)
+        {
+            Vector3 c = player != null ? player.position : transform.position;
+            float r2 = mycariScanRadius * mycariScanRadius;
+            var all = mgr.All;
+            for (int i = 0; i < all.Count; i++)
+            {
+                var npc = all[i];
+                if (npc == null || !npc.isActiveAndEnabled) continue;
+                Vector3 d = npc.transform.position - c;
+                d.y = 0f;
+                if (d.sqrMagnitude <= r2 && _seen.Add(npc)) _hits.Add(MakeMycariHit(npc));
             }
         }
 

@@ -229,7 +229,7 @@ public class NPCFlocker : MonoBehaviour
         go.transform.localPosition = Vector3.zero;
 
         _targetRing = go.AddComponent<LineRenderer>();
-        _targetRing.useWorldSpace = false;
+        _targetRing.useWorldSpace = true;   // points follow the ground (UpdateTargetRing), so slopes never cut it
         _targetRing.loop = true;
         _targetRing.widthMultiplier = 0.06f;
         _targetRing.numCapVertices = 4;
@@ -263,6 +263,20 @@ public class NPCFlocker : MonoBehaviour
         float a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 3.2f));
         var c = new Color(1f, 0.66f, 0.36f, a);
         _targetRing.startColor = _targetRing.endColor = c;
+
+        // Lay the ring on the ground under it, point by point, a few centimetres up.
+        int n = _targetRing.positionCount;
+        float r = Mathf.Max(0.45f, _agent ? _agent.radius * 1.6f : 0.8f);
+        Vector3 o = ScanLabelPosition;
+        var terrain = Terrain.activeTerrain;
+        for (int i = 0; i < n; i++)
+        {
+            float t = (i / (float)n) * Mathf.PI * 2f;
+            Vector3 p = new Vector3(o.x + Mathf.Cos(t) * r, o.y, o.z + Mathf.Sin(t) * r);
+            float g = terrain ? terrain.SampleHeight(p) + terrain.transform.position.y : o.y;
+            p.y = Mathf.Max(g, o.y - 0.5f) + 0.06f;
+            _targetRing.SetPosition(i, p);
+        }
     }
 
     void Awake()
